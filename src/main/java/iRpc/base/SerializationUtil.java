@@ -1,16 +1,15 @@
 package iRpc.base;
 
 
-import com.dyuproject.protostuff.LinkedBuffer;
-import com.dyuproject.protostuff.ProtostuffIOUtil;
-import com.dyuproject.protostuff.Schema;
-import com.dyuproject.protostuff.runtime.RuntimeSchema;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.objenesis.Objenesis;
-import org.objenesis.ObjenesisStd;
+import iRpc.dataBridge.RequestData;
+import io.protostuff.LinkedBuffer;
+import io.protostuff.ProtostuffIOUtil;
+import io.protostuff.Schema;
+import io.protostuff.runtime.RuntimeSchema;
 
 /**
  * 
@@ -22,8 +21,6 @@ public class SerializationUtil {
 
     private static Map<Class<?>, Schema<?>> cachedSchema = new ConcurrentHashMap<Class<?>, Schema<?>>();
 
-    private static Objenesis objenesis = new ObjenesisStd(true);
-
     private SerializationUtil() {
     }
     /**
@@ -32,15 +29,13 @@ public class SerializationUtil {
      * @return
      */
     @SuppressWarnings("unchecked")
-    private static <T> Schema<T> getSchema(Class<T> cls) {
-        Schema<T> schema = (Schema<T>) cachedSchema.get(cls);
-        if (schema == null) {
-            schema = RuntimeSchema.createFrom(cls);
-            if (schema != null) {
-                cachedSchema.put(cls, schema);
-            }
-        }
-        return schema;
+	private static <T> Schema<T> getSchema(Class<T> cls) {
+    	if(!cachedSchema.containsKey(cls)){
+    		Schema<T> schema = RuntimeSchema.getSchema(cls);
+    		cachedSchema.put(cls, schema);
+    		return schema;
+    	}
+        return (Schema<T>) cachedSchema.get(cls);
     }
 
     /**
@@ -65,15 +60,33 @@ public class SerializationUtil {
      */
     public static <T> T deserialize(byte[] data, Class<T> cls) {
         try {
-        	/*
-        	 * 使用ObjenesisStd就算反序列化对象没有空构造  也可正常工作   fastJson就不行！
-        	 * */
-            T message = (T) objenesis.newInstance(cls);//实例化
-            Schema<T> schema = getSchema(cls);//获取类的schema
+        	Schema<T> schema = getSchema(cls);//获取类的schema
+//            T message = (T) objenesis.newInstance(cls);//实例化
+            T message = schema.newMessage();//实例化
             ProtostuffIOUtil.mergeFrom(data, message, schema);
             return message;
         } catch (Exception e) {
             throw new IllegalStateException(e.getMessage(), e);
         }
     }
+    
+    public static void main(String[] args) {
+    	RequestData data = new RequestData();
+		Object[] arg = new Object[2];
+		arg[0] = "arg1";
+		arg[1] = 2;
+		data.setArgs(arg);
+		
+		data.setRequestNum("12121");
+		
+		Class<?>[] clazzs = new Class<?>[2];
+		clazzs[0] = String.class;
+		clazzs[1] = Integer.class;
+		data.setParamTyps(clazzs);
+		
+		byte[] sData = serialize(data);
+		
+		RequestData DRequestData = deserialize(sData,RequestData.class);
+		
+	}
 }

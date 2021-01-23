@@ -1,7 +1,7 @@
 # iRpc
 
 #### 介绍
-iRpc为一款基于netty实现的轻量级高性能rpc框架
+iRpc为一款基于netty实现的轻量级高性能rpc框架，为spring项目赋能，最终支持Controller层rpc协议托管
 
 #### 软件架构
 软件架构说明

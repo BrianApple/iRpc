@@ -1,4 +1,4 @@
-package iRpc.socketAware.handler;
+package iRpc.socketAware.codec;
 
 import iRpc.base.SerializationUtil;
 import iRpc.dataBridge.ResponseData;
@@ -7,11 +7,14 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
 /**
  * 
- * @Description: 
- * @author  yangcheng
- * @date:   2019年3月18日
+ * <p>Description: </p>
+ * <p>Copyright: Copyright (c) 2019</p>
+ * <p>Company: www.uiotcp.com</p>
+ * @author yangcheng
+ * @date 2019年3月18日
+ * @version 1.0
  */
-public class RpcEncoder extends MessageToByteEncoder<ResponseData> {
+public class RpcServerEncoder extends MessageToByteEncoder<ResponseData> {
 
 	@Override
 	protected void encode(ChannelHandlerContext ctx, ResponseData msg, ByteBuf out) throws Exception {

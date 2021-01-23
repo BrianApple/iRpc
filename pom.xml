@@ -24,15 +24,15 @@
 	</dependency>
 	<!--google Protostuff -->
     <dependency>
-        <groupId>com.dyuproject.protostuff</groupId>
+        <groupId>io.protostuff</groupId>
         <artifactId>protostuff-core</artifactId>
-        <version>1.0.7</version>
+        <version>1.7.0</version>
     </dependency>
-    <dependency>
-        <groupId>com.dyuproject.protostuff</groupId>
-        <artifactId>protostuff-runtime</artifactId>
-        <version>1.0.7</version>
-    </dependency>
+	<dependency>
+	    <groupId>io.protostuff</groupId>
+	    <artifactId>protostuff-runtime</artifactId>
+	    <version>1.7.0</version>
+	</dependency>
     <!-- Objenesis -->
     <dependency>
         <groupId>org.objenesis</groupId>

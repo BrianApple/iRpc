@@ -8,8 +8,8 @@ import org.slf4j.LoggerFactory;
 import iRpc.base.concurrent.ThreadFactoryImpl;
 import iRpc.dataBridge.RequestData;
 import iRpc.dataBridge.ResponseData;
-import iRpc.socketAware.handler.RpcDecoder;
-import iRpc.socketAware.handler.RpcEncoder;
+import iRpc.socketAware.codec.RpcServerDecoder;
+import iRpc.socketAware.codec.RpcServerEncoder;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -61,21 +61,19 @@ public class RemoteServer {
             @Override
             public void initChannel(SocketChannel ch) throws Exception {
                 ch.pipeline().addLast(
-                    new RpcEncoder(), //
-                    new RpcDecoder(), //
+                    new RpcServerEncoder(), //
+                    new RpcServerDecoder(), //
                     new IdleStateHandler(0, 0, 120),//
                     new NettyConnetManageHandler(), //
                     new NettyServerHandler());
             }
         });
-
+		logger.info("server started at port: 10916");
 		try {
-		/*ChannelFuture sync = */this.bootstrap.bind().sync();
-//		InetSocketAddress addr = (InetSocketAddress) sync.channel().localAddress();
-//		this.port = addr.getPort();
+			this.bootstrap.bind().sync();
 		}
 		catch (InterruptedException e1) {
-		throw new RuntimeException("this.bootstrap.bind().sync() InterruptedException", e1);
+			throw new RuntimeException("this.bootstrap.bind().sync() InterruptedException", e1);
 		}
 	}
 	
@@ -129,7 +127,7 @@ public class RemoteServer {
         @Override
         protected void channelRead0(ChannelHandlerContext ctx, RequestData msg) throws Exception {
         	/**
-        	 * 调用本地方法
+        	 * TODO 调用本地方法
         	 */
         	ResponseData rsp = null;
         	ctx.channel().writeAndFlush(rsp);

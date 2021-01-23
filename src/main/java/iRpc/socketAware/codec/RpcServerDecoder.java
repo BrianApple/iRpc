@@ -1,4 +1,4 @@
-package iRpc.socketAware.handler;
+package iRpc.socketAware.codec;
 
 
 import java.nio.ByteBuffer;
@@ -10,15 +10,18 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 /**
  * 
- * @Description: 
- * @author  yangcheng
- * @date:   2019年3月18日
+ * <p>Description: </p>
+ * <p>Copyright: Copyright (c) 2019</p>
+ * <p>Company: www.uiotcp.com</p>
+ * @author yangcheng
+ * @date 2019年3月8日
+ * @version 1.0
  */
-public class RpcDecoder extends LengthFieldBasedFrameDecoder{
+public class RpcServerDecoder extends LengthFieldBasedFrameDecoder{
 
 	
 	
-	public RpcDecoder() {
+	public RpcServerDecoder() {
 		super(1024*4, 0, 2, 0, 0);
 	}
 
@@ -43,9 +46,5 @@ public class RpcDecoder extends LengthFieldBasedFrameDecoder{
 		}finally {
 			return requestData;
 		}
-       
-        
 	}
-
-	
 }

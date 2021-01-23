@@ -1,9 +1,14 @@
 package iRpc.socketAware;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import iRpc.base.concurrent.ThreadFactoryImpl;
 import iRpc.dataBridge.ResponseData;
-import iRpc.socketAware.handler.RpcDecoder;
-import iRpc.socketAware.handler.RpcEncoder;
+import iRpc.socketAware.codec.RpcClientDecoder;
+import iRpc.socketAware.codec.RpcClientEncoder;
+import iRpc.socketAware.codec.RpcServerDecoder;
+import iRpc.socketAware.codec.RpcServerEncoder;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -24,7 +29,7 @@ import io.netty.handler.timeout.IdleStateHandler;
  * @date:   2019年3月20日
  */
 public class RemoteClient {
-	
+	protected static Logger logger = LoggerFactory.getLogger(RemoteClient.class);
 	private final Bootstrap bootstrap = new Bootstrap();
     private final EventLoopGroup eventLoopGroupWorker;
 	public RemoteClient(){
@@ -45,15 +50,19 @@ public class RemoteClient {
 		            .handler(new ChannelInitializer<SocketChannel>() {
 		                @Override
 		                public void initChannel(SocketChannel ch) throws Exception {
-		                    ch.pipeline().addLast(//
-		                    		 new RpcEncoder(), //
-		                             new RpcDecoder(), 
+		                    ch.pipeline().addLast(
+		                    		 new RpcClientEncoder(), //
+		                             new RpcClientDecoder(), 
 		                        new IdleStateHandler(0, 0, 120),//
 		                        new NettyConnetManageHandler(), //
 		                        new NettyClientHandler());//获取数据
 		                }
 		            });
-		 /*ChannelFuture channelFuture=*/handler.connect(ip, port).sync();
+		 /**
+		  * 
+		  */
+		 logger.info("rpc client is connected to server {}:{}",ip, port);
+		 handler.connect(ip, port).sync();
 	}
 	
 	
@@ -106,7 +115,7 @@ public class RemoteClient {
         @Override
         protected void channelRead0(ChannelHandlerContext ctx, ResponseData msg) throws Exception {
         	/**
-        	 * 调用的处理响应数据的方法
+        	 * TODO 调用的处理响应数据的方法
         	 */
 //            processMessageReceived(ctx, msg);
 
