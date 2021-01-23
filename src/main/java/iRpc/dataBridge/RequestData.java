@@ -11,6 +11,9 @@ public class RequestData implements Serializable{
 	private static final long serialVersionUID = -497072374733332517L;
 	private boolean isBroadcast;//是否广播到所有网关节点
 	private String requestNum;//请求编号
+	/**
+	 * 全类名
+	 */
 	private String className;
 	private String methodName;
 	private Class<?>[] paramTyps;

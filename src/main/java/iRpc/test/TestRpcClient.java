@@ -20,10 +20,13 @@ public class TestRpcClient {
 	 */
 	public static void ClientRpc(){
 		RemoteClient client = new RemoteClient();
-		try {
-			client.start("127.0.0.1", 10916);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
+		new Thread(()->{
+			try {
+				client.start("127.0.0.1", 10916);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}).start();
+		
 	}
 }

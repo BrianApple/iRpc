@@ -7,8 +7,6 @@ import iRpc.base.concurrent.ThreadFactoryImpl;
 import iRpc.dataBridge.ResponseData;
 import iRpc.socketAware.codec.RpcClientDecoder;
 import iRpc.socketAware.codec.RpcClientEncoder;
-import iRpc.socketAware.codec.RpcServerDecoder;
-import iRpc.socketAware.codec.RpcServerEncoder;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -82,7 +80,6 @@ public class RemoteClient {
         @Override
         public void channelActive(ChannelHandlerContext ctx) throws Exception {
             super.channelActive(ctx);
-
         }
 
 
@@ -117,6 +114,7 @@ public class RemoteClient {
         	/**
         	 * TODO 调用的处理响应数据的方法
         	 */
+        	System.out.println(msg);
 //            processMessageReceived(ctx, msg);
 
         }

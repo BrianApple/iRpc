@@ -8,7 +8,7 @@ import java.util.List;
  * @author  yangcheng
  * @date:   2019年3月17日
  */
-public class ResponseData implements Serializable{
+public class ResponseData<T> implements Serializable{
 	private static final long serialVersionUID = 1341548752135718024L;
 	private String responseNum;
 	/**
@@ -17,7 +17,7 @@ public class ResponseData implements Serializable{
 	 * 500 失败
 	 */
 	private int returnCode = 200;
-	private List<Object> data;
+	private T data;
 	private Throwable erroInfo;
 
 	public int getReturnCode() {
@@ -27,15 +27,12 @@ public class ResponseData implements Serializable{
 	public void setReturnCode(int returnCode) {
 		this.returnCode = returnCode;
 	}
-
-	public List<Object> getData() {
+	public T getData() {
 		return data;
 	}
-
-	public void setData(List<Object> data) {
+	public void setData(T data) {
 		this.data = data;
 	}
-
 	public Throwable getErroInfo() {
 		return erroInfo;
 	}

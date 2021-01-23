@@ -1,6 +1,8 @@
 package iRpc.socketAware;
 
 import java.net.InetSocketAddress;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -129,7 +131,10 @@ public class RemoteServer {
         	/**
         	 * TODO 调用本地方法
         	 */
-        	ResponseData rsp = null;
+        	ResponseData<Map<String,Object>> rsp = new ResponseData<>();
+        	Map<String,Object> ret = new HashMap<String, Object>();
+        	rsp.setResponseNum(msg.getRequestNum());
+        	rsp.setData(ret);
         	ctx.channel().writeAndFlush(rsp);
         }
     }
