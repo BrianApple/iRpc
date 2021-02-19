@@ -2,6 +2,7 @@ package iRpc.base;
 
 
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -70,7 +71,7 @@ public class SerializationUtil {
         }
     }
     
-    public static void main(String[] args) {
+    /*public static void main(String[] args) {
     	RequestData data = new RequestData();
 		Object[] arg = new Object[2];
 		arg[0] = "arg1";
@@ -85,8 +86,6 @@ public class SerializationUtil {
 		data.setParamTyps(clazzs);
 		
 		byte[] sData = serialize(data);
-		
 		RequestData DRequestData = deserialize(sData,RequestData.class);
-		
-	}
+	}*/
 }
