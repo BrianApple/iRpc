@@ -87,6 +87,6 @@ public class SerializationUtil {
 		byte[] sData = serialize(data);
 		
 		RequestData DRequestData = deserialize(sData,RequestData.class);
-		
+		System.out.println(DRequestData);
 	}
 }
