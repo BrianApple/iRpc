@@ -6,11 +6,8 @@ import iRpc.socketAware.RemoteClient;
 /**
  * RPC测试入口
  * <p>Description: </p>
- * <p>Copyright: Copyright (c) 2019</p>
- * <p>Company: www.uiotcp.com</p>
  * @author yangcheng
  * @date 2021年1月23日
- * @version 1.0
  */
 public class TestRpcClient {
 	public static void main(String[] args) {

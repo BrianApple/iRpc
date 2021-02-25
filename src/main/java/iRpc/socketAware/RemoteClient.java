@@ -1,5 +1,6 @@
 package iRpc.socketAware;
 
+import iRpc.dataBridge.RequestData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,6 +21,9 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
+
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
  * 通用通讯客户端
  * @Description: 
@@ -62,8 +66,8 @@ public class RemoteClient {
 		 logger.info("rpc client is connected to server {}:{}",ip, port);
 		 handler.connect(ip, port).sync();
 	}
-	
-	
+
+
 	class NettyConnetManageHandler extends ChannelDuplexHandler {
         @Override
         public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
@@ -105,6 +109,7 @@ public class RemoteClient {
         public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
             ctx.channel().close();
         }
+
     }
 	
 	class NettyClientHandler extends SimpleChannelInboundHandler<ResponseData> {

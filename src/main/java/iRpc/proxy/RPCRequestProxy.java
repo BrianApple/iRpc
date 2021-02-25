@@ -25,6 +25,9 @@ public class RPCRequestProxy {
         super();
         this.rpcServerIP = rpcServerIP;
     }
+    public RPCRequestProxy(){
+        this.rpcServerIP = rpcServerIP;
+    }
     public RPCRequestProxy isBroadcast(boolean isBroadcast){
         this.isBroadcast = isBroadcast;
         return this;
