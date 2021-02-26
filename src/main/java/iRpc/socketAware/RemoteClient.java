@@ -1,6 +1,10 @@
 package iRpc.socketAware;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import iRpc.cache.CommonLocalCache;
 import iRpc.dataBridge.RequestData;
+import iRpc.future.DefaultFuture;
+import io.netty.channel.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -9,12 +13,6 @@ import iRpc.dataBridge.ResponseData;
 import iRpc.socketAware.codec.RpcClientDecoder;
 import iRpc.socketAware.codec.RpcClientEncoder;
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.ChannelDuplexHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -34,6 +32,8 @@ public class RemoteClient {
 	protected static Logger logger = LoggerFactory.getLogger(RemoteClient.class);
 	private final Bootstrap bootstrap = new Bootstrap();
     private final EventLoopGroup eventLoopGroupWorker;
+	private Channel channel;
+	Cache<String, DefaultFuture> caffeineCache= new CommonLocalCache().caffeineCache();
 	public RemoteClient(){
 		eventLoopGroupWorker = new NioEventLoopGroup(1, new ThreadFactoryImpl("netty_rpc_client_", false));
 	}
@@ -56,72 +56,69 @@ public class RemoteClient {
 		                    		 new RpcClientEncoder(), //
 		                             new RpcClientDecoder(), 
 		                        new IdleStateHandler(0, 0, 120),//
-		                        new NettyConnetManageHandler(), //
-		                        new NettyClientHandler());//获取数据
+		                        new ClientHandler());//获取数据
 		                }
 		            });
 		 /**
 		  * 
 		  */
 		 logger.info("rpc client is connected to server {}:{}",ip, port);
-		 handler.connect(ip, port).sync();
+		ChannelFuture future = handler.connect(ip, port).sync();
+		channel=future.channel();
+	}
+	/**
+	 * 发送消息
+	 *
+	 * @param request
+	 * @return
+	 */
+	public ResponseData send(final RequestData request) {
+		try {
+			channel.writeAndFlush(request).await();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		return new ClientHandler().getRpcResponse(request.getRequestNum());
 	}
 
 
-	class NettyConnetManageHandler extends ChannelDuplexHandler {
-        @Override
-        public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
-            super.channelRegistered(ctx);
-        }
 
+	class ClientHandler extends ChannelDuplexHandler {
 
-        @Override
-        public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
-            super.channelUnregistered(ctx);
-        }
+		@Override
+		public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+			if (msg instanceof RequestData) {
+				RequestData request = (RequestData) msg;
+				//发送请求对象之前，先把请求ID保存下来，并构建一个与响应Future的映射关系
+				caffeineCache.put(request.getRequestNum(), new DefaultFuture());
+			}
+			super.write(ctx, msg, promise);
+		}
 
-
-        @Override
-        public void channelActive(ChannelHandlerContext ctx) throws Exception {
-            super.channelActive(ctx);
-        }
-
-
-        @Override
-        public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        }
-
-
-        @Override
-        public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-            if (evt instanceof IdleStateEvent) {
-                IdleStateEvent evnet = (IdleStateEvent) evt;
-                if (evnet.state().equals(IdleState.ALL_IDLE)) {
-                    ctx.channel().close();
-                }
-            }
-
-            ctx.fireUserEventTriggered(evt);
-        }
-
-
-        @Override
-        public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-            ctx.channel().close();
-        }
-
-    }
-	
-	class NettyClientHandler extends SimpleChannelInboundHandler<ResponseData> {
-
-        @Override
-        protected void channelRead0(ChannelHandlerContext ctx, ResponseData msg) throws Exception {
-        	/**
-        	 * TODO 调用的处理响应数据的方法
-        	 */
-        	System.out.println(msg);
-//            processMessageReceived(ctx, msg);
-
-        }
-    }
+		@Override
+		public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+			if (msg instanceof ResponseData) {
+				//获取响应对象
+				ResponseData response = (ResponseData) msg;
+				DefaultFuture defaultFuture = caffeineCache.getIfPresent(response.getResponseNum());
+				defaultFuture.setResponse(response);
+			}
+			super.channelRead(ctx,msg);
+		}
+		/**
+		 * 获取响应结果
+		 *
+		 * @param requestId
+		 * @return
+		 */
+		public ResponseData getRpcResponse(String requestId) {
+			try {
+				DefaultFuture future = caffeineCache.getIfPresent(requestId);
+				return future.getRpcResponse(10);
+			} finally {
+				//获取成功以后，从map中移除
+				caffeineCache.asMap().remove(requestId);
+			}
+		}
+	}
 }

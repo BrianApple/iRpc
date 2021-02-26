@@ -17,9 +17,9 @@ import java.util.concurrent.TimeUnit;
  * @date:   2019年3月20日
  */
 public class CommonLocalCache {
-	public CommonLocalCache(){
-		throw new AssertionError();
-	}
+//	public CommonLocalCache(){
+//		throw new AssertionError();
+//	}
 	/**
 	 * 缓存所有rpcNode IP
 	 */

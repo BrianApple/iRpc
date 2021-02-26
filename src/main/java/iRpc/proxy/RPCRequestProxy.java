@@ -54,6 +54,8 @@ public class RPCRequestProxy {
                 ResponseData responseData = null;
                 try {
                     remoteClient.start(rpcServerIP, 10916);
+                    ResponseData send = remoteClient.send(requestData);
+                    System.out.println("请求调用返回结果：{}"+ send.getData());
                 } catch (Exception e) {
                     e.printStackTrace();
 //                    responseData = new ResponseData();

@@ -14,7 +14,7 @@ public interface RPCExportService {
 	 * @param str
 	 * @return
 	 */
-	String test(String str);
+	public String test(String str);
 
 }
 

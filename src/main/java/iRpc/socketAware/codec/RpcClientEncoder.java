@@ -9,8 +9,6 @@ import io.netty.handler.codec.MessageToByteEncoder;
 /**
  * 
  * <p>Description: </p>
- * <p>Copyright: Copyright (c) 2019</p>
- * <p>Company: www.uiotcp.com</p>
  * @author yangcheng
  * @date 2019年3月18日
  * @version 1.0

@@ -1,5 +1,7 @@
 package iRpc.socketAware;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
@@ -81,29 +83,6 @@ public class RemoteServer {
 	
 	
 	class NettyConnetManageHandler extends ChannelDuplexHandler {
-        @Override
-        public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
-            super.channelRegistered(ctx);
-        }
-
-
-        @Override
-        public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
-            super.channelUnregistered(ctx);
-        }
-
-
-        @Override
-        public void channelActive(ChannelHandlerContext ctx) throws Exception {
-            super.channelActive(ctx);
-
-        }
-
-
-        @Override
-        public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        }
-
 
         @Override
         public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
@@ -128,14 +107,48 @@ public class RemoteServer {
 
         @Override
         protected void channelRead0(ChannelHandlerContext ctx, RequestData msg) throws Exception {
-        	/**
-        	 * TODO 调用本地方法
-        	 */
-        	ResponseData<Map<String,Object>> rsp = new ResponseData<>();
-        	Map<String,Object> ret = new HashMap<String, Object>();
-        	rsp.setResponseNum(msg.getRequestNum());
-        	rsp.setData(ret);
-        	ctx.channel().writeAndFlush(rsp);
+
+            ResponseData rpcResponse = new ResponseData();
+            rpcResponse.setResponseNum(msg.getRequestNum());
+            try {
+                Object handler = handler(msg);
+                rpcResponse.setData(handler);
+            } catch (Throwable throwable) {
+                rpcResponse.setErroInfo(throwable);
+                throwable.printStackTrace();
+            }
+            ctx.writeAndFlush(rpcResponse);
+        }
+        /**
+         * 服务端使用代理处理请求
+         *
+         * @param request
+         * @return
+         */
+        private Object handler(RequestData request) throws Exception {
+           /* //使用Class.forName进行加载Class文件
+            Class<?> clazz = Class.forName(request.getClassName());
+            Object serviceBean = applicationContext.getBean(clazz);
+            Class<?> serviceClass = serviceBean.getClass();
+            String methodName = request.getMethodName();
+
+            Class<?>[] parameterTypes = request.getParamTyps();
+            Object[] parameters = request.getArgs();
+
+            //使用CGLIB Reflect
+            FastClass fastClass = FastClass.create(serviceClass);
+            FastMethod fastMethod = fastClass.getMethod(methodName, parameterTypes);
+            System.out.println("开始调用CGLIB动态代理执行服务端方法...");
+            return fastMethod.invoke(serviceBean, parameters);*/
+
+//            Class<?> clazz = RPCCache.getClass(request.getClassName()+"Impl");
+            Class<?> clazz = Class.forName(request.getClassName());
+            ResponseData responseData = null;
+            Method method = clazz.getMethod(request.getMethodName(), request.getParamTyps());
+            responseData = (ResponseData) method.invoke(clazz.newInstance(), request.getArgs());
+            //请求响应代码一一对应
+//            responseData.setResponseNum(request.getRequestNum());
+            return responseData.getData();
         }
     }
 	
