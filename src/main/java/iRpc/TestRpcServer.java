@@ -1,4 +1,4 @@
-package iRpc.test;
+package iRpc;
 
 import iRpc.socketAware.RemoteServer;
 
