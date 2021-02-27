@@ -38,7 +38,6 @@ public class RPCRequestProxy {
 
             @Override
             public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-                // TODO Auto-generated method stub
                 RequestData requestData = new RequestData();
                 requestData.setBroadcast(isBroadcast);
                 requestData.setRequestNum(UUID.randomUUID().toString());

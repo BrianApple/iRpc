@@ -108,12 +108,12 @@ public class RemoteServer {
         @Override
         protected void channelRead0(ChannelHandlerContext ctx, RequestData msg) throws Exception {
 
-            ResponseData rpcResponse = new ResponseData();
-            rpcResponse.setResponseNum(msg.getRequestNum());
+            ResponseData rpcResponse = new ResponseData(msg.getRequestNum(),200);
             try {
                 Object handler = handler(msg);
                 rpcResponse.setData(handler);
             } catch (Throwable throwable) {
+            	rpcResponse.setReturnCode(500);
                 rpcResponse.setErroInfo(throwable);
                 throwable.printStackTrace();
             }

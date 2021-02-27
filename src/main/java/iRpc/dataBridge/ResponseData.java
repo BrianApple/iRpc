@@ -20,6 +20,12 @@ public class ResponseData<T> implements Serializable{
 	private T data;
 	private Throwable erroInfo;
 
+	public ResponseData(String responseNum, int returnCode) {
+		super();
+		this.responseNum = responseNum;
+		this.returnCode = returnCode;
+	}
+
 	public int getReturnCode() {
 		return returnCode;
 	}

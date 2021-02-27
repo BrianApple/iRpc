@@ -19,6 +19,7 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
+import io.netty.util.concurrent.GenericFutureListener;
 
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -33,7 +34,7 @@ public class RemoteClient {
 	private final Bootstrap bootstrap = new Bootstrap();
     private final EventLoopGroup eventLoopGroupWorker;
 	private Channel channel;
-	Cache<String, DefaultFuture> caffeineCache= new CommonLocalCache().caffeineCache();
+	Cache<String, DefaultFuture> caffeineCache= CommonLocalCache.newCaffeineCache();
 	public RemoteClient(){
 		eventLoopGroupWorker = new NioEventLoopGroup(1, new ThreadFactoryImpl("netty_rpc_client_", false));
 	}
@@ -71,13 +72,19 @@ public class RemoteClient {
 	 *
 	 * @param request
 	 * @return
+	 * @throws InterruptedException 
 	 */
-	public ResponseData send(final RequestData request) {
-		try {
-			channel.writeAndFlush(request).await();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
+	public ResponseData send(final RequestData request) throws InterruptedException {
+		channel.writeAndFlush(request).await().addListener(new ChannelFutureListener() {
+			
+			@Override
+			public void operationComplete(ChannelFuture future) throws Exception {
+				if(!future.isSuccess()){
+					//not success
+					new ResponseData<>(request.getRequestNum(), 500);
+				}
+			}
+		});
 		return new ClientHandler().getRpcResponse(request.getRequestNum());
 	}
 
