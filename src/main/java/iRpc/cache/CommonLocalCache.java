@@ -67,7 +67,7 @@ public class CommonLocalCache {
 	 * 
 	 * <p>Description: </p>
 	 * <p>Copyright: Copyright (c) 2019</p>
-	 * <p>Company: www.uiotcp.com</p>
+	 * <p>Company: www.uiotp.com</p>
 	 * @author yangcheng
 	 * @date 2021年2月27日
 	 * @version 1.0
