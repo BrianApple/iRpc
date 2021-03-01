@@ -12,7 +12,7 @@ import java.util.UUID;
 /**
  * Description:
  * 　 * Copyright: Copyright (c) 2019
- * 　 * Company: www.uiotcp.com
+ * 　 * Company: www.uiotp.com
  * 　 * @author hejuanjuan
  * 　 * @date 2021/2/7
  * 　 * @version 1.0
@@ -47,7 +47,7 @@ public class RPCRequestProxy {
                 requestData.setArgs(args);
 
                 RemoteClient remoteClient = new RemoteClient();
-                //TODO  改为从zookeeper获取rpc数据
+
                 System.out.println("开始执行："+method.getName()+"方法");
                 long startTome = System.currentTimeMillis();
                 ResponseData responseData = null;
