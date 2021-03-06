@@ -4,12 +4,16 @@ package iRpc.socketAware.codec;
 import java.nio.ByteBuffer;
 
 import iRpc.base.SerializationUtil;
+import iRpc.base.messageDeal.MessageType;
+import iRpc.dataBridge.RecieveData;
 import iRpc.dataBridge.RequestData;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 /**
- * 
+ * 协议类型：
+ *  len   type     data
+ * 2byte  1byte  长度值减1
  * <p>Description: </p>
  * <p>Copyright: Copyright (c) 2019</p>
  * <p>Company: www.uiotcp.com</p>
@@ -34,17 +38,27 @@ public class RpcServerDecoder extends LengthFieldBasedFrameDecoder{
 		}
 		ByteBuffer byteBuffer = buff.nioBuffer();
 		int dataAllLen = byteBuffer.limit();
+		// TODO 后续增加报文校验机制
 		int lenArea = byteBuffer.getShort();
-		int dataLen = dataAllLen - 2;
-		byte[] contentData = new byte[dataLen];
-        byteBuffer.get(contentData);//报头数据
-        RequestData requestData = null;
-        try {
-        	requestData = SerializationUtil.deserialize(contentData, RequestData.class);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}finally {
-			return requestData;
+		int dataLen = dataAllLen - 3;
+		int msgType = byteBuffer.get();//消息类型
+
+		switch (MessageType.getMessageType(msgType)){
+			case BASE_MSG:
+				byte[] contentData = new byte[dataLen];//消息体
+				byteBuffer.get(contentData);//报头数据
+				try {
+					RequestData requestData = SerializationUtil.deserialize(contentData, RequestData.class);
+					return new RecieveData<RequestData>(msgType,requestData);
+				} catch (Exception e) {
+					e.printStackTrace();
+					break;
+				}
+			case HEART_MSG:
+				break;
+			case VOTE_MMSG:
+				break;
 		}
+		return null;
 	}
 }

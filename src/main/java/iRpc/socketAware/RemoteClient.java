@@ -1,7 +1,12 @@
 package iRpc.socketAware;
 
 import com.github.benmanes.caffeine.cache.Cache;
+import iRpc.base.IRpcContext;
+import iRpc.base.SerializationUtil;
+import iRpc.base.messageDeal.MessageReciever;
+import iRpc.base.messageDeal.MessageType;
 import iRpc.cache.CommonLocalCache;
+import iRpc.dataBridge.RecieveData;
 import iRpc.dataBridge.RequestData;
 import iRpc.future.DefaultFuture;
 import io.netty.channel.*;
@@ -34,12 +39,12 @@ public class RemoteClient {
 	private final Bootstrap bootstrap = new Bootstrap();
     private final EventLoopGroup eventLoopGroupWorker;
 	private Channel channel;
-	Cache<String, DefaultFuture> caffeineCache= CommonLocalCache.newCaffeineCache();
 	public RemoteClient(){
 		eventLoopGroupWorker = new NioEventLoopGroup(1, new ThreadFactoryImpl("netty_rpc_client_", false));
 	}
 
 	public void start(String ip ,int port) throws InterruptedException{
+		ClientHandler clientHandler = new ClientHandler();
 		 Bootstrap handler = this.bootstrap.group(this.eventLoopGroupWorker).channel(NioSocketChannel.class)//
 		            //
 		            .option(ChannelOption.TCP_NODELAY, true)
@@ -57,75 +62,56 @@ public class RemoteClient {
 		                    		 new RpcClientEncoder(), //
 		                             new RpcClientDecoder(), 
 		                        new IdleStateHandler(0, 0, 120),//
-		                        new ClientHandler());//获取数据
+									clientHandler);//获取数据
 		                }
 		            });
 		 /**
 		  * 
 		  */
 		 logger.info("rpc client is connected to server {}:{}",ip, port);
-		ChannelFuture future = handler.connect(ip, port).sync();
-		channel=future.channel();
-	}
-	/**
-	 * 发送消息
-	 *
-	 * @param request
-	 * @return
-	 * @throws InterruptedException 
-	 */
-	public ResponseData send(final RequestData request) throws InterruptedException {
-		channel.writeAndFlush(request).await().addListener(new ChannelFutureListener() {
-			
+		ChannelFuture future = handler.connect(ip, port).sync().addListener(new ChannelFutureListener() {
 			@Override
-			public void operationComplete(ChannelFuture future) throws Exception {
-				if(!future.isSuccess()){
-					//not success
-					new ResponseData<>(request.getRequestNum(), 500);
-				}
+			public void operationComplete(ChannelFuture channelFuture) throws Exception {
+				channel=channelFuture.channel();
+				CommonLocalCache.ChannelCache.putRet(IRpcContext.DEFUAL_CHANNEL,channel);
 			}
 		});
-		return new ClientHandler().getRpcResponse(request.getRequestNum());
-	}
 
-
-
-	class ClientHandler extends ChannelDuplexHandler {
-
-		@Override
-		public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
-			if (msg instanceof RequestData) {
-				RequestData request = (RequestData) msg;
-				//发送请求对象之前，先把请求ID保存下来，并构建一个与响应Future的映射关系
-				caffeineCache.put(request.getRequestNum(), new DefaultFuture());
-			}
-			super.write(ctx, msg, promise);
-		}
-
-		@Override
-		public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-			if (msg instanceof ResponseData) {
-				//获取响应对象
-				ResponseData response = (ResponseData) msg;
-				DefaultFuture defaultFuture = caffeineCache.getIfPresent(response.getResponseNum());
-				defaultFuture.setResponse(response);
-			}
-			super.channelRead(ctx,msg);
-		}
-		/**
-		 * 获取响应结果
-		 *
-		 * @param requestId
-		 * @return
-		 */
-		public ResponseData getRpcResponse(String requestId) {
-			try {
-				DefaultFuture future = caffeineCache.getIfPresent(requestId);
-				return future.getRpcResponse(10);
-			} finally {
-				//获取成功以后，从map中移除
-				caffeineCache.asMap().remove(requestId);
-			}
-		}
 	}
 }
+
+	@ChannelHandler.Sharable
+	class ClientHandler extends ChannelDuplexHandler {
+		/**
+		 * 处理rpc服务端响应消息
+		 * @param ctx
+		 * @param msg
+		 * @throws Exception
+		 */
+		@Override
+		public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+			if (msg instanceof RecieveData) {
+				RecieveData recieveData = (RecieveData)msg ;
+				switch (MessageType.getMessageType(recieveData.getMsgType())){
+					case BASE_MSG:
+						ResponseData responseData = (ResponseData) recieveData.getData();
+						MessageReciever.reciveMsg(new Runnable() {
+							@Override
+							public void run() {
+								String responseNum =responseData.getResponseNum();
+								//执行回调
+								CommonLocalCache.AsynTaskCache.getAsynTask(responseNum).run(responseData);
+							}
+						});
+					case HEART_MSG:
+						break;
+					case VOTE_MMSG:
+						break;
+				}
+			}
+
+
+
+		}
+
+	}

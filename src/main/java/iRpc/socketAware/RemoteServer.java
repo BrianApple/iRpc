@@ -6,6 +6,10 @@ import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
 
+import iRpc.base.SerializationUtil;
+import iRpc.base.messageDeal.MessageType;
+import iRpc.dataBridge.RecieveData;
+import iRpc.dataBridge.SendData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +48,7 @@ public class RemoteServer {
 		eventLoopGroupWorker = new NioEventLoopGroup(2,new ThreadFactoryImpl("netty_RPC_selecter_", false));
 	}
 	
-	public void start(){
+	public void start(int port , int heartbeat){
 		bootstrap.group(eventLoopGroupBoss, eventLoopGroupWorker)
 		.channel(NioServerSocketChannel.class)
 		//
@@ -60,19 +64,19 @@ public class RemoteServer {
         //
         .option(ChannelOption.SO_RCVBUF, 65535)
         //
-        .localAddress(new InetSocketAddress(10916))//默认端口10916
+        .localAddress(new InetSocketAddress(port))//默认端口10916
         .childHandler(new ChannelInitializer<SocketChannel>() {
             @Override
             public void initChannel(SocketChannel ch) throws Exception {
                 ch.pipeline().addLast(
                     new RpcServerEncoder(), //
                     new RpcServerDecoder(), //
-                    new IdleStateHandler(0, 0, 120),//
+                    new IdleStateHandler(0, 0, heartbeat),//
                     new NettyConnetManageHandler(), //
                     new NettyServerHandler());
             }
         });
-		logger.info("server started at port: 10916");
+		logger.info("server started at port: "+ port);
 		try {
 			this.bootstrap.bind().sync();
 		}
@@ -102,22 +106,39 @@ public class RemoteServer {
             ctx.channel().close();
         }
     }
-	
-    class NettyServerHandler extends SimpleChannelInboundHandler<RequestData> {
+
+    /**
+     * 服务端handler
+     */
+    class NettyServerHandler extends SimpleChannelInboundHandler<RecieveData> {
 
         @Override
-        protected void channelRead0(ChannelHandlerContext ctx, RequestData msg) throws Exception {
+        protected void channelRead0(ChannelHandlerContext ctx, RecieveData msg) throws Exception {
+            if(msg != null){
 
-            ResponseData rpcResponse = new ResponseData(msg.getRequestNum(),200);
-            try {
-                Object handler = handler(msg);
-                rpcResponse.setData(handler);
-            } catch (Throwable throwable) {
-            	rpcResponse.setReturnCode(500);
-                rpcResponse.setErroInfo(throwable);
-                throwable.printStackTrace();
+
+                switch (MessageType.getMessageType(msg.getMsgType())){
+                    case BASE_MSG:
+                        RequestData requestData = (RequestData) msg.getData();
+                        ResponseData rpcResponse = new ResponseData(requestData.getRequestNum(),200);
+                        try {
+                            Object handler = handler(requestData);
+                            rpcResponse.setData(handler);
+                        } catch (Throwable throwable) {
+                            rpcResponse.setReturnCode(500);
+                            rpcResponse.setErroInfo(throwable);
+                            throwable.printStackTrace();
+                        }
+                        SendData<ResponseData> sendData = new SendData<ResponseData>(msg.getMsgType(), rpcResponse);
+                        ctx.writeAndFlush(sendData);
+                       break;
+                    case HEART_MSG:
+                        break;
+                    case VOTE_MMSG:
+                        break;
+                }
             }
-            ctx.writeAndFlush(rpcResponse);
+
         }
         /**
          * 服务端使用代理处理请求

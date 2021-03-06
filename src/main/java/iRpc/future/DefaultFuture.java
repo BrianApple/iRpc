@@ -6,12 +6,12 @@ import iRpc.dataBridge.ResponseData;
 /**
  * @description: 自定义实现Future
  */
-public class DefaultFuture<T> {
-    private ResponseData<T> rpcResponse;
+public class DefaultFuture {
+    private ResponseData rpcResponse;
     private volatile boolean isSucceed = false;
     private final Object object = new Object();
 
-    public ResponseData<T> getRpcResponse(int timeout) {
+    public ResponseData getRpcResponseBySyn(int timeout) {
         synchronized (object) {
             while (!isSucceed) {
                 try {
@@ -24,7 +24,7 @@ public class DefaultFuture<T> {
         }
     }
 
-    public void setResponse(ResponseData<T> response) {
+    public void setResponse(ResponseData response) {
         if (isSucceed) {
             return;
         }

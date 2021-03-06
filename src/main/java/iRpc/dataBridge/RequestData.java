@@ -7,7 +7,7 @@ import java.io.Serializable;
  * @author  yangcheng
  * @date:   2019年3月17日
  */
-public class RequestData implements Serializable{
+public class RequestData implements  IDataSend , Serializable{
 	private static final long serialVersionUID = -497072374733332517L;
 	private boolean isBroadcast;//是否广播到所有网关节点
 	private String requestNum;//请求编号

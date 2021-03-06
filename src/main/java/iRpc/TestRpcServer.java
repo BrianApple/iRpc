@@ -20,6 +20,6 @@ public class TestRpcServer {
 	 */
 	public static void ServerRpc(){
 		RemoteServer server = new RemoteServer();
-		server.start();
+		server.start(10916,60);
 	}
 }

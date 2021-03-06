@@ -14,26 +14,8 @@ import iRpc.dataBridge.ResponseData;
  * @date 2021年2月27日
  * @version 1.0
  */
-public interface IProcessor<T> {
-	public void run(ResponseData<T> ret);
-	
-	
-	
-	public static void main(String[] args) {
-		Map<String,IProcessor<Object>> retCache = new HashMap<>();
-		retCache.put("1", new IProcessor<Object>() {
+public interface IProcessor {
+	public void run(ResponseData ret);
 
-			@Override
-			public void run(ResponseData<Object> ret) {
-				
-				System.out.println(ret.getReturnCode());
-			}
-		});
-		
-		//-------------------------------------------------------------
-		ResponseData<Object> ret2= new ResponseData<>("1", 200);
-		retCache.get(ret2.getResponseNum()).run(ret2);
-		
-	}
 
 }

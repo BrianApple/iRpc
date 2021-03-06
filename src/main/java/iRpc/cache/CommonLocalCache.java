@@ -6,6 +6,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 
 import iRpc.base.processor.IProcessor;
 import iRpc.dataBridge.ResponseData;
+import io.netty.channel.Channel;
 
 import java.util.concurrent.TimeUnit;
 
@@ -28,17 +29,24 @@ public class CommonLocalCache {
 	 */
 //	public static ConcurrentHashMap<String , RPCRequestProxy> rpcProxys = new ConcurrentHashMap<>();
 
-	public static <T> Cache<String,T>  newCaffeineCache() {
+	public static <T> Cache<String,T>  newCaffeineCache(int timeout) {
 		return Caffeine.newBuilder()
 				// 设置最后一次写入或访问后经过固定时间过期
-				.expireAfterWrite(600, TimeUnit.SECONDS)
+				.expireAfterWrite(timeout, TimeUnit.SECONDS)
 				// 初始的缓存空间大小
 				.initialCapacity(100)
 				// 缓存的最大条数
 				.maximumSize(1000)
 				.build();
 	}
-	
+	public static <T> Cache<String,T>  newCaffeineCacheNoExpireTime() {
+		return Caffeine.newBuilder()
+				// 初始的缓存空间大小
+				.initialCapacity(100)
+				// 缓存的最大条数
+				.maximumSize(1000)
+				.build();
+	}
 	/**
 	 * return data cache
 	 * <p>Description: </p>
@@ -51,7 +59,7 @@ public class CommonLocalCache {
 	public static class RetCache {
 		private static Cache<String,Object> retCache;
 		static{
-			retCache = CommonLocalCache.newCaffeineCache();
+			retCache = CommonLocalCache.newCaffeineCache(60);
 		}
 		
 		public static void putRet(String key,Object value){
@@ -64,7 +72,7 @@ public class CommonLocalCache {
 		
 	}
 	/**
-	 * 
+	 * channel cache
 	 * <p>Description: </p>
 	 * <p>Copyright: Copyright (c) 2019</p>
 	 * <p>Company: www.uiotp.com</p>
@@ -72,12 +80,41 @@ public class CommonLocalCache {
 	 * @date 2021年2月27日
 	 * @version 1.0
 	 */
-	public static class AsynchoTask{
-		private static Cache<String,IProcessor<Object>> callTaskCache;
+	public static class ChannelCache {
+		private static Cache<String, Channel> retCache;
 		static{
-			callTaskCache = CommonLocalCache.newCaffeineCache();
+			retCache = CommonLocalCache.newCaffeineCacheNoExpireTime();
 		}
-		
-		
+
+		public static void putRet(String key,Channel value){
+			retCache.put(key, value);
+		}
+		public static Channel getChannel(String key){
+			return retCache.getIfPresent(key);
+		}
+
+
+	}
+	/**
+	 * 
+	 * <p>Description: </p>
+	 * <p>Copyright: Copyright (c) 2021</p>
+	 * <p>Company: www.uiotp.com</p>
+	 * @author yangcheng
+	 * @date 2021年2月27日
+	 * @version 1.0
+	 */
+	public static class AsynTaskCache{
+		private static Cache<String,IProcessor> callTaskCache;
+		static{
+			callTaskCache = CommonLocalCache.newCaffeineCache(60);
+		}
+
+		public static void putAsynTask(String key,IProcessor task){
+			callTaskCache.put(key , task);
+		}
+		public static IProcessor getAsynTask(String key){
+			return callTaskCache.getIfPresent(key);
+		}
 	}
 }

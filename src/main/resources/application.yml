@@ -1,3 +1,18 @@
+servMod: both #server / client / both
+#rpc客户端配置信息
+client:
+  serverNode:
+    - node: # 第一个节点是主节点即master节点
+      ip: 127.0.0.1
+      port: 10916
+    - node:
+      ip: 127.0.0.1
+      port: 10917
+# rpc服务短配置信息
 server:
-  ip: 127.0.0.1
-  port: 10916
+  serverPort: 10916
+  heartbeat: 60 # min
+  ClusterNode:
+    - node:
+      ip: 127.0.0.1
+      port: 10916
