@@ -1,4 +1,4 @@
-package iRpc;
+package iRpc.test;
 
 import iRpc.base.messageDeal.MessageSender;
 import iRpc.base.processor.IProcessor;
@@ -15,7 +15,7 @@ import java.util.UUID;
  * RPC测试入口
  * <p>Description: </p>
  * <p>Copyright: Copyright (c) 2019</p>
- * <p>Company: www.uiotcp.com</p>
+ * <p>Company: www.uiotp.com</p>
  * @author yangcheng
  * @date 2021年1月23日
  * @version 1.0
@@ -50,14 +50,20 @@ public class TestRpcServer {
 		requestData.setParamTyps(classes);
 		Object[] args = new Object[]{"world"};
 		requestData.setArgs(args);
-		MessageSender.asynMessaSend2Server(1, requestData, new IProcessor() {
-			@Override
-			public void run(ResponseData ret) {
-				System.out.println("客户端收到数据："+ret.getData());
-			}
-		});
-//		ResponseData ret = MessageSender.synMessageSend2Server(1,requestData,10000);
-//		System.out.println("客户端收到数据："+ret.getData());
+		/**
+		 * 异步消息发送
+		 */
+//		MessageSender.asynBaseMsgSend( requestData, new IProcessor() {
+//			@Override
+//			public void run(ResponseData ret) {
+//				System.out.println("客户端收到数据："+ret.getData());
+//			}
+//		});
+		/**
+		 * 同步消息发送
+		 */
+		ResponseData ret = MessageSender.synBaseMsgSend(requestData,10000);
+		System.out.println("客户端收到数据："+ret.getData());
 		System.out.println("main方法执行结束");
 	}
 }

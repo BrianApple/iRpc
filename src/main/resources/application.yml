@@ -1,4 +1,3 @@
-servMod: both #server / client / both
 #rpc客户端配置信息
 client:
   serverNode:

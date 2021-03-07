@@ -92,7 +92,7 @@ public class MessageSender implements IMessageSender {
      * 同步消息发送，超时时间为毫秒
      * @return
      */
-    public  static ResponseData synMessageSend2Server(int msgType, IDataSend data, int timeout){
+    private  static ResponseData synMessageSend2Server(int msgType, IDataSend data, int timeout){
         Channel channel = CommonLocalCache.ChannelCache.getChannel(IRpcContext.DEFUAL_CHANNEL);
         ResponseData ret = synMessageSend(new SendData<IDataSend>(msgType,channel,data),timeout);
         return ret == null ? new ResponseData(data.getRequestNum(),500) : ret;
@@ -104,9 +104,29 @@ public class MessageSender implements IMessageSender {
      * @param task 回调方法
      * @return
      */
-    public static boolean asynMessaSend2Server(int msgType,IDataSend data,IProcessor task){
+    private static boolean asynMessaSend2Server(int msgType,IDataSend data,IProcessor task){
         Channel channel = CommonLocalCache.ChannelCache.getChannel(IRpcContext.DEFUAL_CHANNEL);
         boolean suc = asynMessageSend(new SendData<IDataSend>(msgType,channel,data),task);
         return suc;
+    }
+
+    /**
+     *  同步发送消息，消息类型为1
+     * @param data
+     * @param timeout
+     * @return
+     */
+    public static ResponseData synBaseMsgSend(IDataSend data, int timeout){
+        return synMessageSend2Server( 1,  data,  timeout);
+    }
+
+    /**
+     * 同步发送消息，消息类型为1
+     * @param data
+     * @param task
+     * @return
+     */
+    public static boolean asynBaseMsgSend(IDataSend data,IProcessor task){
+        return asynMessaSend2Server(1, data, task);
     }
 }

@@ -1,23 +1,28 @@
 # iRpc
 
 #### 介绍
-iRpc为一款基于netty实现的轻量级高性能rpc框架，为spring项目赋能，最终支持Controller层rpc协议托管
+iRpc为一款基于netty实现的轻量级高性能rpc框架
 
 #### 软件架构
 软件架构说明
 
 
-#### 安装教程
-
-1.  xxxx
-2.  xxxx
-3.  xxxx
+#### 消息类型
+0.  心跳消息
+1.  基本消息类型
+2.  选举消息，服务节点选举使用
 
 #### 使用说明
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+1.  iRpc.base.starter.ClientStarter 为客户端启动模块：当应用服务作为iRpc客户端时需手动实例化该实例，默认配置文件为application.yml；
+    配置文件可以通过带参构造方法动态指定；
+2.  iRpc.base.starter.ServerStarter 为服务端启动模块：当应用服务作为iRpc服务端时需手动实例化该实例，默认配置文件为application.yml；
+    配置文件可以通过带参构造方法动态指定；
+3.  application.yml配置文件：
+    client.serverNode:指定iRpc客户端连接的iRpc服务端节点信息，默认与第一个节点建立连接。
+    server.serverPort:iRpc服务端网络端口信息。
+    server.heartbeat:iRpc服务端检测iRpc客户端连接状态的最大心跳周期。
+    server.ClusterNode:iRpc服务节点集群，可以不指定，基于raft算法选举master节点
 
 #### 参与贡献
 
@@ -25,13 +30,3 @@ iRpc为一款基于netty实现的轻量级高性能rpc框架，为spring项目�
 2.  新建 Feat_xxx 分支
 3.  提交代码
 4.  新建 Pull Request
-
-
-#### 特技
-
-1.  使用 Readme\_XXX.md 来支持不同的语言，例如 Readme\_en.md, Readme\_zh.md
-2.  Gitee 官方博客 [blog.gitee.com](https://blog.gitee.com)
-3.  你可以 [https://gitee.com/explore](https://gitee.com/explore) 这个地址来了解 Gitee 上的优秀开源项目
-4.  [GVP](https://gitee.com/gvp) 全称是 Gitee 最有价值开源项目，是综合评定出的优秀开源项目
-5.  Gitee 官方提供的使用手册 [https://gitee.com/help](https://gitee.com/help)
-6.  Gitee 封面人物是一档用来展示 Gitee 会员风采的栏目 [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)
