@@ -92,7 +92,7 @@
                     </descriptorRefs>
                     <archive>
                         <manifest>
-                            <mainClass>iRpc.entrance.Entrance</mainClass>
+                            <mainClass>iRpc.TestRpcServer</mainClass>
                         </manifest>
                     </archive>
                	  </configuration>

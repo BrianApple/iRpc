@@ -28,7 +28,7 @@ import org.yaml.snakeyaml.Yaml;
  * @author Lenovo
  */
 public class YamlUtil {
-
+    private static Map<String,Object> ymalMap = null;
     /**
      * 读取下拉状态配置参数返回map
      * @param pathName
@@ -36,10 +36,16 @@ public class YamlUtil {
      * @throws IOException
      */
     public static Map<String,Object> getTypePropertieMap(String pathName){
-
-        Yaml yaml = new Yaml();
-        HashMap hashMap = yaml.loadAs(Thread.currentThread().getContextClassLoader().getResourceAsStream(pathName), HashMap.class);
-        return hashMap;
+        if (ymalMap == null){
+            synchronized (YamlUtil.class){
+                if (ymalMap == null){
+                    ymalMap = new HashMap<>();
+                    Yaml yaml = new Yaml();
+                    ymalMap = yaml.loadAs(Thread.currentThread().getContextClassLoader().getResourceAsStream(pathName), HashMap.class);
+                }
+            }
+        }
+        return ymalMap;
 
     }
 

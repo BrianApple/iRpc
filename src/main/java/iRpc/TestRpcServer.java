@@ -1,6 +1,15 @@
 package iRpc;
 
+import iRpc.base.messageDeal.MessageSender;
+import iRpc.base.processor.IProcessor;
+import iRpc.base.starter.ClientStarter;
+import iRpc.base.starter.ServerStarter;
+import iRpc.dataBridge.RequestData;
+import iRpc.dataBridge.ResponseData;
 import iRpc.socketAware.RemoteServer;
+import org.checkerframework.checker.units.qual.C;
+
+import java.util.UUID;
 
 /**
  * RPC测试入口
@@ -19,7 +28,36 @@ public class TestRpcServer {
 	 * rpc服务端
 	 */
 	public static void ServerRpc(){
-		RemoteServer server = new RemoteServer();
-		server.start(10916,60);
+		ServerStarter serverStarter = new ServerStarter();
+		try {
+			Thread.sleep(2000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		ClientStarter clientStarter = new ClientStarter();
+		try {
+			Thread.sleep(2000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+
+		RequestData requestData = new RequestData();
+		requestData.setBroadcast(true);
+		requestData.setRequestNum(UUID.randomUUID().toString());
+		requestData.setClassName("iRpc.rpcService.RPCExportServiceImpl");//获取方法所在类名称
+		requestData.setMethodName("test");
+		Class<? >[] classes = new Class[]{String.class};
+		requestData.setParamTyps(classes);
+		Object[] args = new Object[]{"world"};
+		requestData.setArgs(args);
+		MessageSender.asynMessaSend2Server(1, requestData, new IProcessor() {
+			@Override
+			public void run(ResponseData ret) {
+				System.out.println("客户端收到数据："+ret.getData());
+			}
+		});
+//		ResponseData ret = MessageSender.synMessageSend2Server(1,requestData,10000);
+//		System.out.println("客户端收到数据："+ret.getData());
+		System.out.println("main方法执行结束");
 	}
 }

@@ -1,17 +1,15 @@
 package iRpc.rpcService;
 
 import iRpc.dataBridge.ResponseData;
-import iRpc.service.RPCService;
-import io.protostuff.Service;
+import iRpc.service.IRPCService;
 
 /**
  * Description:
  * 　* @author hejuanjuan
  * 　* @date 2021/2/25
  */
-@RPCService
-public class RPCExportServiceImpl implements RPCExportService{
-    @Override
+@IRPCService
+public class RPCExportServiceImpl{
     public String test(String str) {
 
         return "hello "+str;

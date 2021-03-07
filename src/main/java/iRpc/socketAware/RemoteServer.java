@@ -122,8 +122,8 @@ public class RemoteServer {
                         RequestData requestData = (RequestData) msg.getData();
                         ResponseData rpcResponse = new ResponseData(requestData.getRequestNum(),200);
                         try {
-                            Object handler = handler(requestData);
-                            rpcResponse.setData(handler);
+                            Object data = handler(requestData);
+                            rpcResponse.setData(data);
                         } catch (Throwable throwable) {
                             rpcResponse.setReturnCode(500);
                             rpcResponse.setErroInfo(throwable);
@@ -164,12 +164,12 @@ public class RemoteServer {
 
 //            Class<?> clazz = RPCCache.getClass(request.getClassName()+"Impl");
             Class<?> clazz = Class.forName(request.getClassName());
-            ResponseData responseData = null;
+            Object data = null;
             Method method = clazz.getMethod(request.getMethodName(), request.getParamTyps());
-            responseData = (ResponseData) method.invoke(clazz.newInstance(), request.getArgs());
+            data = method.invoke(clazz.newInstance(), request.getArgs());
             //请求响应代码一一对应
 //            responseData.setResponseNum(request.getRequestNum());
-            return responseData.getData();
+            return data;
         }
     }
 	

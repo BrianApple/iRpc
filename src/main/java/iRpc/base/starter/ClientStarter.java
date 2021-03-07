@@ -35,13 +35,18 @@ public class ClientStarter implements Istarter{
             List<Map<String,Object>> lists = (List<Map<String, Object>>) clientMap.get("serverNode");
             Map<String,Object> m = lists.get(0);
             String ip = (String) m.get("ip");
-            String port = (String) m.get("port");
-            try {
-                new RemoteClient().start(ip,Integer.parseInt(port));
-            } catch (Exception e) {
-                e.printStackTrace();
-                return false;
-            }
+            String port = String.valueOf( m.get("port"));
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        new RemoteClient().start(ip,Integer.parseInt(port));
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            },String.format("Client4%s:%s",ip,port)).start();
+            return true;
         }
         return true;
     }

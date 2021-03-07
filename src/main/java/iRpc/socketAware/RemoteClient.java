@@ -1,14 +1,10 @@
 package iRpc.socketAware;
 
-import com.github.benmanes.caffeine.cache.Cache;
 import iRpc.base.IRpcContext;
-import iRpc.base.SerializationUtil;
 import iRpc.base.messageDeal.MessageReciever;
 import iRpc.base.messageDeal.MessageType;
 import iRpc.cache.CommonLocalCache;
 import iRpc.dataBridge.RecieveData;
-import iRpc.dataBridge.RequestData;
-import iRpc.future.DefaultFuture;
 import io.netty.channel.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,12 +17,7 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.timeout.IdleState;
-import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
-import io.netty.util.concurrent.GenericFutureListener;
-
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 通用通讯客户端
@@ -45,30 +36,29 @@ public class RemoteClient {
 
 	public void start(String ip ,int port) throws InterruptedException{
 		ClientHandler clientHandler = new ClientHandler();
-		 Bootstrap handler = this.bootstrap.group(this.eventLoopGroupWorker).channel(NioSocketChannel.class)//
-		            //
-		            .option(ChannelOption.TCP_NODELAY, true)
-		            //
-		            .option(ChannelOption.SO_KEEPALIVE, false)
-		            //
-		            .option(ChannelOption.SO_SNDBUF, 65535)
-		            //
-		            .option(ChannelOption.SO_RCVBUF, 65535)
-		            //
-		            .handler(new ChannelInitializer<SocketChannel>() {
-		                @Override
-		                public void initChannel(SocketChannel ch) throws Exception {
-		                    ch.pipeline().addLast(
-		                    		 new RpcClientEncoder(), //
-		                             new RpcClientDecoder(), 
-		                        new IdleStateHandler(0, 0, 120),//
-									clientHandler);//获取数据
-		                }
-		            });
-		 /**
-		  * 
-		  */
-		 logger.info("rpc client is connected to server {}:{}",ip, port);
+		Bootstrap handler = this.bootstrap.group(this.eventLoopGroupWorker).channel(NioSocketChannel.class)//
+				//
+				.option(ChannelOption.TCP_NODELAY, true)
+				//
+				.option(ChannelOption.SO_KEEPALIVE, false)
+				//
+				.option(ChannelOption.SO_SNDBUF, 65535)
+				//
+				.option(ChannelOption.SO_RCVBUF, 65535)
+				//
+				.handler(new ChannelInitializer<SocketChannel>() {
+					@Override
+					public void initChannel(SocketChannel ch) throws Exception {
+						ch.pipeline().addLast(
+								 new RpcClientEncoder(), //
+								 new RpcClientDecoder(),
+								clientHandler);//获取数据
+					}
+				});
+		/**
+		*
+		*/
+		logger.info("rpc client is connected to server {}:{}",ip, port);
 		ChannelFuture future = handler.connect(ip, port).sync().addListener(new ChannelFutureListener() {
 			@Override
 			public void operationComplete(ChannelFuture channelFuture) throws Exception {
@@ -76,42 +66,37 @@ public class RemoteClient {
 				CommonLocalCache.ChannelCache.putRet(IRpcContext.DEFUAL_CHANNEL,channel);
 			}
 		});
-
 	}
 }
 
-	@ChannelHandler.Sharable
-	class ClientHandler extends ChannelDuplexHandler {
-		/**
-		 * 处理rpc服务端响应消息
-		 * @param ctx
-		 * @param msg
-		 * @throws Exception
-		 */
-		@Override
-		public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-			if (msg instanceof RecieveData) {
-				RecieveData recieveData = (RecieveData)msg ;
-				switch (MessageType.getMessageType(recieveData.getMsgType())){
-					case BASE_MSG:
-						ResponseData responseData = (ResponseData) recieveData.getData();
-						MessageReciever.reciveMsg(new Runnable() {
-							@Override
-							public void run() {
-								String responseNum =responseData.getResponseNum();
-								//执行回调
-								CommonLocalCache.AsynTaskCache.getAsynTask(responseNum).run(responseData);
-							}
-						});
-					case HEART_MSG:
-						break;
-					case VOTE_MMSG:
-						break;
-				}
+@ChannelHandler.Sharable
+class ClientHandler extends ChannelDuplexHandler {
+	/**
+	 * 处理rpc服务端响应消息
+	 * @param ctx
+	 * @param msg
+	 * @throws Exception
+	 */
+	@Override
+	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+		if (msg instanceof RecieveData) {
+			RecieveData recieveData = (RecieveData)msg ;
+			switch (MessageType.getMessageType(recieveData.getMsgType())){
+				case BASE_MSG:
+					ResponseData responseData = (ResponseData) recieveData.getData();
+					MessageReciever.reciveMsg(new Runnable() {
+						@Override
+						public void run() {
+							String responseNum =responseData.getResponseNum();
+							//执行回调
+							CommonLocalCache.AsynTaskCache.getAsynTask(responseNum).run(responseData);
+						}
+					});
+				case HEART_MSG:
+					break;
+				case VOTE_MMSG:
+					break;
 			}
-
-
-
 		}
-
 	}
+}

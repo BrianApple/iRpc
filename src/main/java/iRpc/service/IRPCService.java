@@ -8,10 +8,11 @@ import java.lang.annotation.*;
  * @author  yangcheng
  * @date:   2019年3月18日
  */
+@Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE,ElementType.METHOD})
 @Documented
-public @interface RPCService {
+public @interface IRPCService {
 	String value() default "";
 
 }
