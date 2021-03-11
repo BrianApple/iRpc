@@ -21,9 +21,37 @@ import java.util.UUID;
  * @version 1.0
  */
 public class TestRpcServer {
+	public static String yang = "yang";
 	public static void main(String[] args) {
-		ServerRpc();
+//		ServerRpc();
+
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				System.out.println(yang);
+				yang = "cheng";
+			}
+		}).start();
+
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					Thread.sleep(5000);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+				System.out.println(yang);
+			}
+		}).start();
+		try {
+			Thread.sleep(15000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 	}
+
+
 	/**
 	 * rpc服务端
 	 */
