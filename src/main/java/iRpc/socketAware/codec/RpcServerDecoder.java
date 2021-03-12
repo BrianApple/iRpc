@@ -2,6 +2,9 @@ package iRpc.socketAware.codec;
 
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import iRpc.base.SerializationUtil;
 import iRpc.base.messageDeal.MessageType;
@@ -9,7 +12,10 @@ import iRpc.dataBridge.RecieveData;
 import iRpc.dataBridge.RequestData;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
+import io.netty.util.internal.RecyclableArrayList;
+
 /**
  * 协议类型：
  *  len   type     data
@@ -21,44 +27,48 @@ import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
  * @date 2019年3月8日
  * @version 1.0
  */
-public class RpcServerDecoder extends LengthFieldBasedFrameDecoder{
+public class RpcServerDecoder extends ByteToMessageDecoder {
 
 	
-	
-	public RpcServerDecoder() {
-		super(1024*4, 0, 2, 0, 0);
-	}
-
-	@SuppressWarnings({ "finally", "unused" })
 	@Override
-	protected Object decode(ChannelHandlerContext ctx, ByteBuf in) throws Exception {
-		ByteBuf buff =  (ByteBuf) super.decode(ctx, in);
-		if(buff == null){
-			return null;
-		}
-		ByteBuffer byteBuffer = buff.nioBuffer();
-		int dataAllLen = byteBuffer.limit();
-		// TODO 后续增加报文校验机制
-		int lenArea = byteBuffer.getShort();
-		int dataLen = dataAllLen - 3;
-		int msgType = byteBuffer.get();//消息类型
+	protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
+		RecyclableArrayList arrayList = RecyclableArrayList.newInstance();
+		for (;;){
+			if (in.readableBytes() > 4){
+				int pos = in.readerIndex();
+				int len = in.readShort();
+				if(len <= in.readableBytes()  ){
 
-		switch (MessageType.getMessageType(msgType)){
-			case BASE_MSG:
-				byte[] contentData = new byte[dataLen];//消息体
-				byteBuffer.get(contentData);//报头数据
-				try {
-					RequestData requestData = SerializationUtil.deserialize(contentData, RequestData.class);
-					return new RecieveData<RequestData>(msgType,requestData);
-				} catch (Exception e) {
-					e.printStackTrace();
+					int dataLen = len - 1;
+					int msgType = in.readByte();//消息类型
+
+					switch (MessageType.getMessageType(msgType)){
+						case BASE_MSG:
+							byte[] contentData = new byte[dataLen];//消息体
+							in.readBytes(contentData);//报头数据
+							RequestData requestData = SerializationUtil.deserialize(contentData, RequestData.class);
+							RecieveData recieveData =  new RecieveData<RequestData>(msgType,requestData);
+							arrayList.add(recieveData);
+							break;
+						case HEART_MSG:
+							break;
+						case VOTE_MMSG:
+							break;
+					}
+				}else{
+					in.readerIndex(pos);
 					break;
 				}
-			case HEART_MSG:
-				break;
-			case VOTE_MMSG:
-				break;
+			}
+			break;
 		}
-		return null;
+		if (arrayList.size() > 0){
+			List<Object> list = new ArrayList<>(arrayList.size());
+			list.addAll(arrayList);
+			arrayList.recycle();
+			out.add(list);
+		}
+
 	}
+
 }

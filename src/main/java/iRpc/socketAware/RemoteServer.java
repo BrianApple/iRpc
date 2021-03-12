@@ -3,7 +3,9 @@ package iRpc.socketAware;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import iRpc.base.SerializationUtil;
@@ -110,32 +112,35 @@ public class RemoteServer {
     /**
      * 服务端handler
      */
-    class NettyServerHandler extends SimpleChannelInboundHandler<RecieveData> {
+    class NettyServerHandler extends SimpleChannelInboundHandler<Object> {
 
         @Override
-        protected void channelRead0(ChannelHandlerContext ctx, RecieveData msg) throws Exception {
-            if(msg != null){
-
-
-                switch (MessageType.getMessageType(msg.getMsgType())){
-                    case BASE_MSG:
-                        RequestData requestData = (RequestData) msg.getData();
-                        ResponseData rpcResponse = new ResponseData(requestData.getRequestNum(),200);
-                        try {
-                            Object data = handler(requestData);
-                            rpcResponse.setData(data);
-                        } catch (Throwable throwable) {
-                            rpcResponse.setReturnCode(500);
-                            rpcResponse.setErroInfo(throwable);
-                            throwable.printStackTrace();
-                        }
-                        SendData<ResponseData> sendData = new SendData<ResponseData>(msg.getMsgType(), rpcResponse);
-                        ctx.writeAndFlush(sendData);
-                       break;
-                    case HEART_MSG:
-                        break;
-                    case VOTE_MMSG:
-                        break;
+        protected void channelRead0(ChannelHandlerContext ctx, Object msg) throws Exception {
+            if(msg instanceof List){
+                List<RecieveData> listData = (List)msg;
+                int size = listData.size();
+                for (int i = 0 ; i < size ; i++){
+                    RecieveData recieveData = listData.get(i);
+                    switch (MessageType.getMessageType(recieveData.getMsgType())){
+                        case BASE_MSG:
+                            RequestData requestData = (RequestData) recieveData.getData();
+                            ResponseData rpcResponse = new ResponseData(requestData.getRequestNum(),200);
+                            try {
+                                Object data = handler(requestData);
+                                rpcResponse.setData(data);
+                            } catch (Throwable throwable) {
+                                rpcResponse.setReturnCode(500);
+                                rpcResponse.setErroInfo(throwable);
+                                throwable.printStackTrace();
+                            }
+                            SendData<ResponseData> sendData = new SendData<ResponseData>(recieveData.getMsgType(), rpcResponse);
+                            ctx.writeAndFlush(sendData);
+                            break;
+                        case HEART_MSG:
+                            break;
+                        case VOTE_MMSG:
+                            break;
+                    }
                 }
             }
 

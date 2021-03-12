@@ -2,6 +2,8 @@ package iRpc.socketAware.codec;
 
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import iRpc.base.SerializationUtil;
@@ -16,6 +18,8 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
+import io.netty.util.internal.RecyclableArrayList;
+
 /**
  * 
  * @Description: 
@@ -26,26 +30,44 @@ public class RpcClientDecoder extends ByteToMessageDecoder {
 
 	@Override
 	protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
-		int i = in.readerIndex();
-		int len = in.readShort();
-		for(len = in.readShort() ; len <= in.readableBytes() + 2 ; ){
-			ByteBuffer byteBuffer = in.nioBuffer();
-			int dataAllLen = byteBuffer.limit();
-			int lenArea = byteBuffer.getShort();
-			int dataLen = dataAllLen - 3;//数据区
-			int msgType = byteBuffer.get();
-			switch (MessageType.getMessageType(msgType)){
-				case BASE_MSG:
-					//基本消息类型的数据响应
-					byte[] contentData = new byte[dataLen];
-					byteBuffer.get(contentData);//报头数据
-					ResponseData responseData = SerializationUtil.deserialize(contentData, ResponseData.class);
-					RecieveData<ResponseData> recieveData= new RecieveData<ResponseData>(msgType,responseData);
-				case HEART_MSG:
+
+		RecyclableArrayList  list = RecyclableArrayList.newInstance();
+
+		for(; ; ){
+			if (in.readableBytes() > 4){
+				int pos = in.readerIndex();
+				int len = in.readShort();//长度
+				if(len <= in.readableBytes()){
+
+					int dataLen = len - 1;//数据区
+					int msgType = in.readByte();
+					switch (MessageType.getMessageType(msgType)){
+						case BASE_MSG:
+							//基本消息类型的数据响应
+							byte[] contentData = new byte[dataLen];
+							in.readBytes(contentData);//报头数据
+							ResponseData responseData = SerializationUtil.deserialize(contentData, ResponseData.class);
+							RecieveData<ResponseData> recieveData= new RecieveData<ResponseData>(msgType,responseData);
+							list.add(recieveData);
+						case HEART_MSG:
+							break;
+						case VOTE_MMSG:
+							break;
+					}
+				}else{
+					in.readerIndex(pos);
 					break;
-				case VOTE_MMSG:
-					break;
+				}
 			}
+			break;
+
 		}
+		if( list.size() > 0 ){
+			List data = new ArrayList<>(list.size());
+			data.addAll(list);
+			list.recycle();
+			out.add(data);
+		}
+
 	}
 }

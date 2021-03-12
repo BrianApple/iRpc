@@ -19,6 +19,8 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.timeout.IdleStateHandler;
 
+import java.util.List;
+
 /**
  * 通用通讯客户端
  * @Description: 
@@ -79,23 +81,27 @@ class ClientHandler extends ChannelDuplexHandler {
 	 */
 	@Override
 	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-		if (msg instanceof RecieveData) {
-			RecieveData recieveData = (RecieveData)msg ;
-			switch (MessageType.getMessageType(recieveData.getMsgType())){
-				case BASE_MSG:
-					ResponseData responseData = (ResponseData) recieveData.getData();
-					MessageReciever.reciveMsg(new Runnable() {
-						@Override
-						public void run() {
-							String responseNum =responseData.getResponseNum();
-							//执行回调
-							CommonLocalCache.AsynTaskCache.getAsynTask(responseNum).run(responseData);
-						}
-					});
-				case HEART_MSG:
-					break;
-				case VOTE_MMSG:
-					break;
+		if (msg instanceof List) {
+			List<RecieveData> listData = (List)msg ;
+			int size = listData.size();
+			for (int i = 0 ; i < size ; i++){
+				RecieveData recieveData = listData.get(i);
+				switch (MessageType.getMessageType(recieveData.getMsgType())){
+					case BASE_MSG:
+						ResponseData responseData = (ResponseData) recieveData.getData();
+						MessageReciever.reciveMsg(new Runnable() {
+							@Override
+							public void run() {
+								String responseNum =responseData.getResponseNum();
+								//执行回调
+								CommonLocalCache.AsynTaskCache.getAsynTask(responseNum).run(responseData);
+							}
+						});
+					case HEART_MSG:
+						break;
+					case VOTE_MMSG:
+						break;
+				}
 			}
 		}
 	}
