@@ -1,6 +1,7 @@
 package iRpc.util;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 /**
  * @Description
@@ -9,7 +10,7 @@ import java.time.LocalDateTime;
  */
 public class CommonUtil {
     public static long getSeq(){
-        long val = LocalDateTime.now().toLocalTime().toSecondOfDay();
+        long val =  LocalDateTime.now().toInstant(ZoneOffset.of("+8")).toEpochMilli();
         return val ;
     }
 

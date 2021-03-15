@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 import iRpc.base.SerializationUtil;
+import iRpc.base.exception.IRPCServerNotFound;
 import iRpc.base.messageDeal.MessageType;
 import iRpc.dataBridge.RecieveData;
 import iRpc.dataBridge.SendData;
@@ -131,7 +132,7 @@ public class RemoteServer {
                             } catch (Throwable throwable) {
                                 rpcResponse.setReturnCode(500);
                                 rpcResponse.setErroInfo(throwable);
-                                throwable.printStackTrace();
+                                logger.error("服务执行异常",throwable);
                             }
                             SendData<ResponseData> sendData = new SendData<ResponseData>(recieveData.getMsgType(), rpcResponse);
                             ctx.writeAndFlush(sendData);
@@ -149,29 +150,41 @@ public class RemoteServer {
          * 服务端使用代理处理请求
          *
          * @param request
-         * @return
+         * @return null执行失败
          */
-        private Object handler(RequestData request) throws Exception {
-           /* //使用Class.forName进行加载Class文件
-            Class<?> clazz = Class.forName(request.getClassName());
-            Object serviceBean = applicationContext.getBean(clazz);
-            Class<?> serviceClass = serviceBean.getClass();
-            String methodName = request.getMethodName();
-
-            Class<?>[] parameterTypes = request.getParamTyps();
-            Object[] parameters = request.getArgs();
-
-            //使用CGLIB Reflect
-            FastClass fastClass = FastClass.create(serviceClass);
-            FastMethod fastMethod = fastClass.getMethod(methodName, parameterTypes);
-            System.out.println("开始调用CGLIB动态代理执行服务端方法...");
-            return fastMethod.invoke(serviceBean, parameters);*/
-
-//            Class<?> clazz = RPCCache.getClass(request.getClassName()+"Impl");
-            Class<?> clazz = Class.forName(request.getClassName());
+        private Object handler(RequestData request) {
+            Class<?> clazz = null;
+            try {
+                clazz = Class.forName(request.getClassName());
+            } catch (ClassNotFoundException e) {
+                throw  new IRPCServerNotFound("server not found（ClassNotFoundException）!");
+            }
             Object data = null;
-            Method method = clazz.getMethod(request.getMethodName(), request.getParamTyps());
-            data = method.invoke(clazz.newInstance(), request.getArgs());
+            Object[] args = request.getArgs();
+            int argsLen = args.length;
+            Class<?>[] clazzs = new Class[argsLen];
+            if(request.getArgs()!= null && request.getArgs().length > 0 &&  ( request.getParamTyps() == null || request.getParamTyps().length < request.getArgs().length)){
+                for (int i = 0 ; i < argsLen; i ++ ) {
+                    clazzs[i] = args[i].getClass();
+                }
+            }else{
+                clazzs = request.getParamTyps();
+            }
+            Method method = null;
+            try {
+                method = clazz.getMethod(request.getMethodName(), clazzs);
+            } catch (NoSuchMethodException e) {
+                throw  new IRPCServerNotFound("server not found（NoSuchMethodException）!");
+            }
+            if(clazz.isAnnotationPresent(iRpc.service.IRPCService.class) || method.isAnnotationPresent(iRpc.service.IRPCService.class) ){
+                try {
+                    data = method.invoke(clazz.newInstance(), request.getArgs());
+                } catch (Exception e) {
+                    throw  new IRPCServerNotFound("server not found!");
+                }
+            }else{
+                throw  new IRPCServerNotFound("server not found!");
+            }
             //请求响应代码一一对应
 //            responseData.setResponseNum(request.getRequestNum());
             return data;

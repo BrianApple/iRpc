@@ -3,6 +3,9 @@ package iRpc.rpcService;
 import iRpc.dataBridge.ResponseData;
 import iRpc.service.IRPCService;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Description:
  * 　* @author hejuanjuan
@@ -13,5 +16,9 @@ public class RPCExportServiceImpl{
     public String test(String str) {
 
         return "hello "+str;
+    }
+
+    public int test(ArrayList<String> args){
+        return args.size();
     }
 }

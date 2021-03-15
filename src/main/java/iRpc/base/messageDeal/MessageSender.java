@@ -8,10 +8,12 @@ import iRpc.dataBridge.IDataSend;
 import iRpc.dataBridge.RequestData;
 import iRpc.dataBridge.ResponseData;
 import iRpc.dataBridge.SendData;
+import iRpc.util.CommonUtil;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -111,22 +113,81 @@ public class MessageSender implements IMessageSender {
     }
 
     /**
-     *  同步发送消息，消息类型为1
-     * @param data
+     * 同步发送消息，消息类型为1
+     * @param isBroadcast
+     * @param className
+     * @param methodName
+     * @param argsType
+     * @param args
      * @param timeout
      * @return
      */
-    public static ResponseData synBaseMsgSend(IDataSend data, int timeout){
-        return synMessageSend2Server( 1,  data,  timeout);
+    public static ResponseData synBaseMsgSend(boolean isBroadcast,String className,String methodName,Class<?>[] argsType,Object[] args, int timeout){
+        RequestData requestData = new RequestData();
+        requestData.setBroadcast(isBroadcast);
+        requestData.setRequestNum(String.valueOf(CommonUtil.getSeq()));
+        requestData.setClassName(className);//获取方法所在类名称
+        requestData.setMethodName(methodName);
+        requestData.setParamTyps(argsType);
+        requestData.setArgs(args);
+        return synMessageSend2Server( 1,  requestData,  timeout);
     }
 
     /**
      * 同步发送消息，消息类型为1
-     * @param data
+     * @param isBroadcast
+     * @param className
+     * @param methodName
+     * @param args
+     * @param timeout
+     * @return
+     */
+    public static ResponseData synBaseMsgSend(boolean isBroadcast,String className,String methodName,Object[] args, int timeout){
+        RequestData requestData = new RequestData();
+        requestData.setBroadcast(isBroadcast);
+        requestData.setRequestNum(String.valueOf(CommonUtil.getSeq()));
+        requestData.setClassName(className);//获取方法所在类名称
+        requestData.setMethodName(methodName);
+        requestData.setArgs(args);
+        return synMessageSend2Server( 1,  requestData,  timeout);
+    }
+
+    /**
+     * 异步发送消息，消息类型为1
+     * @param isBroadcast
+     * @param className
+     * @param methodName
+     * @param argsType
+     * @param args
      * @param task
      * @return
      */
-    public static boolean asynBaseMsgSend(IDataSend data,IProcessor task){
-        return asynMessaSend2Server(1, data, task);
+    public static boolean asynBaseMsgSend(boolean isBroadcast,String className,String methodName,Class<?>[] argsType,Object[] args,IProcessor task){
+        RequestData requestData = new RequestData();
+        requestData.setBroadcast(isBroadcast);
+        requestData.setRequestNum(String.valueOf(CommonUtil.getSeq()));
+        requestData.setClassName(className);//获取方法所在类名称
+        requestData.setMethodName(methodName);
+        requestData.setParamTyps(argsType);
+        requestData.setArgs(args);
+        return asynMessaSend2Server(1, requestData, task);
+    }
+    /**
+     * 异步发送消息，消息类型为1
+     * @param isBroadcast
+     * @param className
+     * @param methodName
+     * @param args
+     * @param task
+     * @return
+     */
+    public static boolean asynBaseMsgSend(boolean isBroadcast,String className,String methodName,Object[] args,IProcessor task){
+        RequestData requestData = new RequestData();
+        requestData.setBroadcast(isBroadcast);
+        requestData.setRequestNum(String.valueOf(CommonUtil.getSeq()));
+        requestData.setClassName(className);//获取方法所在类名称
+        requestData.setMethodName(methodName);
+        requestData.setArgs(args);
+        return asynMessaSend2Server(1, requestData, task);
     }
 }

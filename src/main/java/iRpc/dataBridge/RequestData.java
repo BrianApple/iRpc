@@ -16,6 +16,9 @@ public class RequestData implements  IDataSend , Serializable{
 	 */
 	private String className;
 	private String methodName;
+	/**
+	 * 可选参数，服务端可自动识别参数的简单Class类型
+	 */
 	private Class<?>[] paramTyps;
 	private Object[] args;
 	

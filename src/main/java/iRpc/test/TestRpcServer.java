@@ -43,28 +43,33 @@ public class TestRpcServer {
 			e.printStackTrace();
 		}
 
-		RequestData requestData = new RequestData();
-		requestData.setBroadcast(true);
-		requestData.setRequestNum(UUID.randomUUID().toString());
-		requestData.setClassName("iRpc.rpcService.RPCExportServiceImpl");//获取方法所在类名称
-		requestData.setMethodName("test");
-		Class<? >[] classes = new Class[]{String.class};
-		requestData.setParamTyps(classes);
-		Object[] args = new Object[]{"world"};
-		requestData.setArgs(args);
-		/**
-		 * 异步消息发送
-		 */
-//		MessageSender.asynBaseMsgSend( requestData, new IProcessor() {
-//			@Override
-//			public void run(ResponseData ret) {
-//				System.out.println("客户端收到数据："+ret.getData());
-//			}
-//		});
 		/**
 		 * 同步消息发送
 		 */
-		ResponseData ret = MessageSender.synBaseMsgSend(requestData,10000);
+		Class<? >[] classType = new Class[]{String.class};
+		Object[] argsData = new Object[]{"world"};
+
+		/**
+		 * 异步消息发送
+		 */
+//		MessageSender.asynBaseMsgSend( false,
+//				"iRpc.rpcService.RPCExportServiceImpl",
+//				"test",
+//				classType,
+//				argsData,
+//				new IProcessor() {
+//					@Override
+//					public void run(ResponseData ret) {
+//						System.out.println("客户端收到数据："+ret.getData());
+//					}
+//				});
+
+		ResponseData ret = MessageSender.synBaseMsgSend(false,
+				"iRpc.rpcService.RPCExportServiceImpl",
+				"test",
+				classType,
+				argsData,
+				10000);
 		System.out.println("客户端收到数据："+ret.getData());
 		System.out.println("main方法执行结束");
 	}
