@@ -34,17 +34,17 @@ public class CommonLocalCache {
 				// 设置最后一次写入或访问后经过固定时间过期
 				.expireAfterWrite(timeout, TimeUnit.SECONDS)
 				// 初始的缓存空间大小
-				.initialCapacity(100)
+				.initialCapacity(1000)
 				// 缓存的最大条数
-				.maximumSize(1000)
+				.maximumSize(10000)
 				.build();
 	}
 	public static <T> Cache<String,T>  newCaffeineCacheNoExpireTime() {
 		return Caffeine.newBuilder()
 				// 初始的缓存空间大小
-				.initialCapacity(100)
+				.initialCapacity(1000)
 				// 缓存的最大条数
-				.maximumSize(1000)
+				.maximumSize(10000)
 				.build();
 	}
 	/**
@@ -116,5 +116,30 @@ public class CommonLocalCache {
 		public static IProcessor getAsynTask(String key){
 			return callTaskCache.getIfPresent(key);
 		}
+	}
+
+	/**
+	 * property cache
+	 * <p>Description: 基础配置信息 </p>
+	 * <p>Copyright: Copyright (c) 2019</p>
+	 * <p>Company: www.uiotp.com</p>
+	 * @author hejuanjuan
+	 * @date 2021年2月27日
+	 * @version 1.0
+	 */
+	public static class BasicInfoCache {
+		private static Cache<String, Object> propertyCache;
+		static{
+			propertyCache = CommonLocalCache.newCaffeineCacheNoExpireTime();
+		}
+
+		public static void putProperty(String key,Object value){
+			propertyCache.put(key, value);
+		}
+		public static Object getProperty(String key){
+			return propertyCache.getIfPresent(key);
+		}
+
+
 	}
 }

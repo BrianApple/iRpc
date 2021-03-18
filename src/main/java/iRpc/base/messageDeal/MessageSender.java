@@ -8,12 +8,15 @@ import iRpc.dataBridge.IDataSend;
 import iRpc.dataBridge.RequestData;
 import iRpc.dataBridge.ResponseData;
 import iRpc.dataBridge.SendData;
+import iRpc.dataBridge.vote.HeartBeatResponse;
+import iRpc.dataBridge.vote.VoteResponse;
 import iRpc.util.CommonUtil;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -173,7 +176,7 @@ public class MessageSender implements IMessageSender {
         return asynMessaSend2Server(1, requestData, task);
     }
     /**
-     * 异步发送消息，消息类型为1
+     * 异步发送消息(type=1)
      * @param isBroadcast
      * @param className
      * @param methodName
@@ -190,4 +193,47 @@ public class MessageSender implements IMessageSender {
         requestData.setArgs(args);
         return asynMessaSend2Server(1, requestData, task);
     }
+
+    /**
+     * 选举消息(type=2)
+     * @param sendData
+     * @return
+     */
+    public static CompletableFuture<VoteResponse> vote(IDataSend sendData){
+        CompletableFuture<VoteResponse> future = new CompletableFuture<>();
+        asynMessaSend2Server(2, sendData, new IProcessor() {
+            @Override
+            public void run(ResponseData ret) {
+                VoteResponse voteResponse = (VoteResponse)ret.getData();
+                if(ret.getReturnCode() == 200 && ret.getData() != null){
+                    future.complete(voteResponse);
+                }else{
+                    future.completeExceptionally(ret.getErroInfo());
+                }
+            }
+        });
+        return future;
+    }
+
+    /**
+     * 心跳消息（type=0)
+     * @param sendData
+     * @return
+     */
+    public static CompletableFuture<HeartBeatResponse>  heartBeat(IDataSend sendData){
+        CompletableFuture<HeartBeatResponse> future = new CompletableFuture<>();
+        asynMessaSend2Server(0, sendData, new IProcessor() {
+            @Override
+            public void run(ResponseData ret) {
+                HeartBeatResponse heartBeatResponse = (HeartBeatResponse)ret.getData();
+                if(ret.getReturnCode() == 200 && ret.getData() != null){
+                    future.complete(heartBeatResponse);
+                }else{
+                    future.completeExceptionally(ret.getErroInfo());
+                }
+            }
+        });
+        return future;
+    }
+
 }

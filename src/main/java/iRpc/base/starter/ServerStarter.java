@@ -1,8 +1,12 @@
 package iRpc.base.starter;
 
+import iRpc.cache.CommonLocalCache;
 import iRpc.socketAware.RemoteClient;
 import iRpc.socketAware.RemoteServer;
 import iRpc.util.YamlUtil;
+import iRpc.vote.DLedgerConfig;
+import iRpc.vote.DLedgerLeaderElector;
+import iRpc.vote.MemberState;
 
 import java.util.List;
 import java.util.Map;
@@ -21,6 +25,21 @@ public class ServerStarter implements Istarter{
     public ServerStarter(String pathName) {
         this.pathName = pathName;
         start();
+
+    }
+
+    /**
+     * 初始化选举器，只有集群条件下才会选举
+     * @return
+     */
+    public boolean initLeaderElector(){
+        if(CommonLocalCache.BasicInfoCache.getProperty("elector") == null){
+            DLedgerConfig dLedgerConfig = new DLedgerConfig();
+            DLedgerLeaderElector elector = new DLedgerLeaderElector(dLedgerConfig,new MemberState(dLedgerConfig));
+            CommonLocalCache.BasicInfoCache.putProperty("elector",elector);
+            elector.startup();
+        }
+        return true;
     }
 
     @Override
@@ -35,8 +54,14 @@ public class ServerStarter implements Istarter{
             /**
              * 集群相关节点--涉及节点选举等操作
              */
-            List<Map<String,Object>> lists = (List<Map<String, Object>>) serverMap.get("ClusterNode");
-            Map<String,Object> m = lists.get(0);
+            if(serverMap.containsKey("ClusterNode")){
+                //初始化选举器
+                initLeaderElector();
+                List<Map<String,Object>> lists = (List<Map<String, Object>>)serverMap.get("ClusterNode");
+                Map<String,Object> m = lists.get(0);
+
+            }
+
 //            String nodeIp = (String) m.get("ip");
 //            String nodePort = (String) m.get("port");
 

@@ -11,8 +11,12 @@ import java.util.Map;
 import iRpc.base.SerializationUtil;
 import iRpc.base.exception.IRPCServerNotFound;
 import iRpc.base.messageDeal.MessageType;
+import iRpc.cache.CommonLocalCache;
 import iRpc.dataBridge.RecieveData;
 import iRpc.dataBridge.SendData;
+import iRpc.dataBridge.vote.HeartBeatRequest;
+import iRpc.dataBridge.vote.VoteRequest;
+import iRpc.vote.DLedgerLeaderElector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -127,7 +131,7 @@ public class RemoteServer {
                             RequestData requestData = (RequestData) recieveData.getData();
                             ResponseData rpcResponse = new ResponseData(requestData.getRequestNum(),200);
                             try {
-                                Object data = handler(requestData);
+                                Object data = handleRpcRquest(requestData);
                                 rpcResponse.setData(data);
                             } catch (Throwable throwable) {
                                 rpcResponse.setReturnCode(500);
@@ -138,8 +142,14 @@ public class RemoteServer {
                             ctx.writeAndFlush(sendData);
                             break;
                         case HEART_MSG:
+                            DLedgerLeaderElector elector4h = (DLedgerLeaderElector) CommonLocalCache.BasicInfoCache.getProperty("elector");
+                            HeartBeatRequest heartBeatRequest4h = (HeartBeatRequest) recieveData.getData();
+                            elector4h.handleHeartBeat(heartBeatRequest4h);
                             break;
                         case VOTE_MMSG:
+                            DLedgerLeaderElector elector4v = (DLedgerLeaderElector) CommonLocalCache.BasicInfoCache.getProperty("elector");
+                            VoteRequest voteRequest = (VoteRequest) recieveData.getData();
+                            elector4v.handleVote(voteRequest,false);
                             break;
                     }
                 }
@@ -152,7 +162,7 @@ public class RemoteServer {
          * @param request
          * @return null执行失败
          */
-        private Object handler(RequestData request) {
+        private Object handleRpcRquest(RequestData request) {
             Class<?> clazz = null;
             try {
                 clazz = Class.forName(request.getClassName());
