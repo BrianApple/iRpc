@@ -406,7 +406,7 @@ public class DLedgerLeaderElector {
             heartBeatRequest.setRemoteId(id);
             heartBeatRequest.setLeaderId(leaderId);
             heartBeatRequest.setTerm(term);
-            CompletableFuture<HeartBeatResponse> future = MessageSender.heartBeat(heartBeatRequest);
+            CompletableFuture<HeartBeatResponse> future = MessageSender.heartBeat(heartBeatRequest, memberState.getPeerMap().get(id));
             future.whenComplete((HeartBeatResponse x, Throwable ex) -> {
                 // 统计心跳包发送响应结果
                 try {
@@ -571,7 +571,7 @@ public class DLedgerLeaderElector {
                 voteResponse = handleVote(voteRequest, true);
             } else {
                 //async
-                voteResponse = MessageSender.vote(voteRequest);
+                voteResponse = MessageSender.vote(voteRequest, memberState.getPeerMap().get(id));
             }
             responses.add(voteResponse);
 

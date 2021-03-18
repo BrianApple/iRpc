@@ -36,7 +36,7 @@ public class RemoteClient {
 		eventLoopGroupWorker = new NioEventLoopGroup(1, new ThreadFactoryImpl("netty_rpc_client_", false));
 	}
 
-	public void start(String ip ,int port) throws InterruptedException{
+	public void start(String ip ,int port,String channelName) throws InterruptedException{
 		ClientHandler clientHandler = new ClientHandler();
 		Bootstrap handler = this.bootstrap.group(this.eventLoopGroupWorker).channel(NioSocketChannel.class)//
 				//
@@ -65,7 +65,7 @@ public class RemoteClient {
 			@Override
 			public void operationComplete(ChannelFuture channelFuture) throws Exception {
 				channel=channelFuture.channel();
-				CommonLocalCache.ChannelCache.putRet(IRpcContext.DEFUAL_CHANNEL,channel);
+				CommonLocalCache.ChannelCache.putRet(channelName,channel);
 			}
 		});
 	}

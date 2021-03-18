@@ -24,10 +24,6 @@ import java.util.concurrent.Executors;
  * 消息发送
  */
 public class MessageSender implements IMessageSender {
-    private static ExecutorService executorService = null;
-    static{
-        executorService = Executors.newFixedThreadPool(10,new ThreadFactoryImpl("messageSendSyn_",false));
-    }
     /**
      * 同步发送数据
      * @param msg
@@ -58,7 +54,7 @@ public class MessageSender implements IMessageSender {
                     }
                 }
             });
-            int index = timeout / 1000;
+            int index = timeout / 1000 + (timeout % 1000 == 0 ? 0 : 1 );
             while(CommonLocalCache.RetCache.getRet(sendData.getData().getRequestNum()) == null){
                 if (index-- <= 0  ){
                     break;
@@ -97,8 +93,8 @@ public class MessageSender implements IMessageSender {
      * 同步消息发送，超时时间为毫秒
      * @return
      */
-    private  static ResponseData synMessageSend2Server(int msgType, IDataSend data, int timeout){
-        Channel channel = CommonLocalCache.ChannelCache.getChannel(IRpcContext.DEFUAL_CHANNEL);
+    private  static ResponseData synMessageSend2Server(int msgType, IDataSend data, int timeout,String channelName){
+        Channel channel = CommonLocalCache.ChannelCache.getChannel(channelName);
         ResponseData ret = synMessageSend(new SendData<IDataSend>(msgType,channel,data),timeout);
         return ret == null ? new ResponseData(data.getRequestNum(),500) : ret;
     }
@@ -109,8 +105,8 @@ public class MessageSender implements IMessageSender {
      * @param task 回调方法
      * @return
      */
-    private static boolean asynMessaSend2Server(int msgType,IDataSend data,IProcessor task){
-        Channel channel = CommonLocalCache.ChannelCache.getChannel(IRpcContext.DEFUAL_CHANNEL);
+    private static boolean asynMessaSend2Server(int msgType,IDataSend data,IProcessor task,String channelName){
+        Channel channel = CommonLocalCache.ChannelCache.getChannel(channelName);
         boolean suc = asynMessageSend(new SendData<IDataSend>(msgType,channel,data),task);
         return suc;
     }
@@ -133,7 +129,7 @@ public class MessageSender implements IMessageSender {
         requestData.setMethodName(methodName);
         requestData.setParamTyps(argsType);
         requestData.setArgs(args);
-        return synMessageSend2Server( 1,  requestData,  timeout);
+        return synMessageSend2Server( 1,  requestData,  timeout,IRpcContext.DEFUAL_CHANNEL);
     }
 
     /**
@@ -152,7 +148,7 @@ public class MessageSender implements IMessageSender {
         requestData.setClassName(className);//获取方法所在类名称
         requestData.setMethodName(methodName);
         requestData.setArgs(args);
-        return synMessageSend2Server( 1,  requestData,  timeout);
+        return synMessageSend2Server( 1,  requestData,  timeout,IRpcContext.DEFUAL_CHANNEL);
     }
 
     /**
@@ -173,7 +169,7 @@ public class MessageSender implements IMessageSender {
         requestData.setMethodName(methodName);
         requestData.setParamTyps(argsType);
         requestData.setArgs(args);
-        return asynMessaSend2Server(1, requestData, task);
+        return asynMessaSend2Server(1, requestData, task,IRpcContext.DEFUAL_CHANNEL);
     }
     /**
      * 异步发送消息(type=1)
@@ -191,7 +187,7 @@ public class MessageSender implements IMessageSender {
         requestData.setClassName(className);//获取方法所在类名称
         requestData.setMethodName(methodName);
         requestData.setArgs(args);
-        return asynMessaSend2Server(1, requestData, task);
+        return asynMessaSend2Server(1, requestData, task,IRpcContext.DEFUAL_CHANNEL);
     }
 
     /**
@@ -199,7 +195,7 @@ public class MessageSender implements IMessageSender {
      * @param sendData
      * @return
      */
-    public static CompletableFuture<VoteResponse> vote(IDataSend sendData){
+    public static CompletableFuture<VoteResponse> vote(IDataSend sendData,String channelName){
         CompletableFuture<VoteResponse> future = new CompletableFuture<>();
         asynMessaSend2Server(2, sendData, new IProcessor() {
             @Override
@@ -211,7 +207,7 @@ public class MessageSender implements IMessageSender {
                     future.completeExceptionally(ret.getErroInfo());
                 }
             }
-        });
+        },channelName);
         return future;
     }
 
@@ -220,7 +216,7 @@ public class MessageSender implements IMessageSender {
      * @param sendData
      * @return
      */
-    public static CompletableFuture<HeartBeatResponse>  heartBeat(IDataSend sendData){
+    public static CompletableFuture<HeartBeatResponse>  heartBeat(IDataSend sendData,String channelName){
         CompletableFuture<HeartBeatResponse> future = new CompletableFuture<>();
         asynMessaSend2Server(0, sendData, new IProcessor() {
             @Override
@@ -232,7 +228,7 @@ public class MessageSender implements IMessageSender {
                     future.completeExceptionally(ret.getErroInfo());
                 }
             }
-        });
+        },channelName);
         return future;
     }
 

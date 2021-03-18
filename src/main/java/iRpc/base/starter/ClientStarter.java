@@ -1,5 +1,6 @@
 package iRpc.base.starter;
 
+import iRpc.base.IRpcContext;
 import iRpc.socketAware.RemoteClient;
 import iRpc.util.YamlUtil;
 
@@ -40,7 +41,7 @@ public class ClientStarter implements Istarter{
                 @Override
                 public void run() {
                     try {
-                        new RemoteClient().start(ip,Integer.parseInt(port));
+                        new RemoteClient().start(ip,Integer.parseInt(port), IRpcContext.DEFUAL_CHANNEL);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }

@@ -1,5 +1,6 @@
 package iRpc.base.starter;
 
+import iRpc.base.concurrent.ThreadFactoryImpl;
 import iRpc.cache.CommonLocalCache;
 import iRpc.socketAware.RemoteClient;
 import iRpc.socketAware.RemoteServer;
@@ -10,6 +11,8 @@ import iRpc.vote.MemberState;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * @Description
@@ -48,17 +51,37 @@ public class ServerStarter implements Istarter{
         Map<String,Object> map =  YamlUtil.getTypePropertieMap(pathName);
         Map<String,Object> serverMap = (Map<String, Object>) map.get("server");
         if(serverMap != null ){
-            String port  = String.valueOf( serverMap.get("serverPort"));
+            String serverPort  = String.valueOf( serverMap.get("serverPort"));
             String heartbeat= String.valueOf(serverMap.get("heartbeat"));
 
             /**
              * 集群相关节点--涉及节点选举等操作
              */
             if(serverMap.containsKey("ClusterNode")){
+                DLedgerConfig config = new DLedgerConfig();
                 //初始化选举器
-                initLeaderElector();
                 List<Map<String,Object>> lists = (List<Map<String, Object>>)serverMap.get("ClusterNode");
-                Map<String,Object> m = lists.get(0);
+                StringBuffer sb = new StringBuffer("n0-localhost:20911;");
+                for (Map<String,Object> nodeInfo
+                     : lists) {
+
+                    ClusterExecutors.executorService.execute(new Runnable() {
+                        @Override
+                        public void run() {
+                            String nodeName = (String) nodeInfo.get("node");
+                            String ip = (String) nodeInfo.get("ip");
+                            String port = String.valueOf(nodeInfo.get("port"));
+                            try {
+                                new RemoteClient().start(ip,Integer.parseInt(port),String.format("%s:$s",ip,port));
+                            } catch (InterruptedException e) {
+                            }
+                            sb.append(String.format("%s-%s:%s;",nodeName,ip,port));
+                        }
+                    });
+
+                }
+                config.setPeers(sb.substring(0,sb.length()-1));
+                initLeaderElector();
 
             }
 
@@ -71,12 +94,12 @@ public class ServerStarter implements Istarter{
                 public void run() {
                     try {
                         //启动服务端
-                        new RemoteServer().start(Integer.parseInt(port),Integer.parseInt(heartbeat));
+                        new RemoteServer().start(Integer.parseInt(serverPort),Integer.parseInt(heartbeat));
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
                 }
-            },String.format("server:%s",port)).start();
+            },String.format("server:%s",serverPort)).start();
         }
         return true;
     }
@@ -84,5 +107,11 @@ public class ServerStarter implements Istarter{
     @Override
     public boolean stop() {
         return false;
+    }
+}
+class ClusterExecutors {
+    public static ExecutorService executorService = null;
+    static{
+        executorService = Executors.newFixedThreadPool(10,new ThreadFactoryImpl("messageSendSyn_",false));
     }
 }

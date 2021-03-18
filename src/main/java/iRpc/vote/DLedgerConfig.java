@@ -21,7 +21,7 @@ import com.beust.jcommander.Parameter;
 import java.io.File;
 
 /**
- * DLedger 的配置信息
+ * DLedger 的配置信息----配置文件包含ClusterNode信息时创建本实例
  * All rights Reserved, Designed By www.uiotcp.com
  * @Description:    描述   
  * @author: https://github.com/openmessaging/openmessaging-storage-dledger
@@ -33,22 +33,16 @@ public class DLedgerConfig {
     public static final String MEMORY = "MEMORY";
     public static final String FILE = "FILE";
 
-    @Parameter(names = {"--group", "-g"}, description = "Group of this server")
     private String group = "default";
 
-    @Parameter(names = {"--id", "-i"}, description = "Self id of this server")
     private String selfId = "n0";
 
-    @Parameter(names = {"--peers", "-p"}, description = "Peer info of this server")
     private String peers = "n0-localhost:20911";
 
-    @Parameter(names = {"--store-base-dir", "-s"}, description = "The base store dir of this server")
     private String storeBaseDir = File.separator + "tmp" + File.separator + "dledgerstore";
 
-    @Parameter(names = {"--peer-push-throttle-point"}, description = "When the follower is behind the leader more than this value, it will trigger the throttle")
     private int peerPushThrottlePoint = 300 * 1024 * 1024;
 
-    @Parameter(names = {"--peer-push-quotas"}, description = "The quotas of the pusher")
     private int peerPushQuota = 20 * 1024 * 1024;
 
     private String storeType = MEMORY;//memory 或者file 两种类型
