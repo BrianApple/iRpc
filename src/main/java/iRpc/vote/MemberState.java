@@ -28,6 +28,7 @@ import java.util.Properties;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
+ * 节点状态机
  * @author https://github.com/openmessaging/openmessaging-storage-dledger
  */
 public class MemberState {
@@ -57,7 +58,7 @@ public class MemberState {
     private long ledgerEndTerm = -1;
     /**当前分组中最大的term值**/
     private long knownMaxTermInGroup = -1;
-    /** 所有节点及其地址 eq:key= n0  value = "localhost:8888" */
+    /** 所有节点及其地址 eq:key= n0  value = "localhost:10916" */
     private Map<String, String> peerMap = new HashMap<>();
 
     public MemberState(DLedgerConfig config) {

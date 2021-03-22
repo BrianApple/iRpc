@@ -196,6 +196,7 @@ public class MessageSender implements IMessageSender {
      * @return
      */
     public static CompletableFuture<VoteResponse> vote(IDataSend sendData,String channelName){
+
         CompletableFuture<VoteResponse> future = new CompletableFuture<>();
         asynMessaSend2Server(2, sendData, new IProcessor() {
             @Override

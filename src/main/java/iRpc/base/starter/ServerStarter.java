@@ -15,7 +15,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * @Description
+ * @Description 服务端启动类
  * @Author yangcheng
  * @Date 2021/3/6
  */
@@ -72,7 +72,7 @@ public class ServerStarter implements Istarter{
                             String ip = (String) nodeInfo.get("ip");
                             String port = String.valueOf(nodeInfo.get("port"));
                             try {
-                                new RemoteClient().start(ip,Integer.parseInt(port),String.format("%s:$s",ip,port));
+                                new RemoteClient().start(ip,Integer.parseInt(port),String.format("%s:%s",ip,port));
                             } catch (InterruptedException e) {
                             }
                             sb.append(String.format("%s-%s:%s;",nodeName,ip,port));

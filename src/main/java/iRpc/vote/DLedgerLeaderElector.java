@@ -20,6 +20,7 @@ package iRpc.vote;
 import com.alibaba.fastjson.JSON;
 import iRpc.base.messageDeal.MessageSender;
 import iRpc.dataBridge.vote.*;
+import iRpc.util.CommonUtil;
 import iRpc.util.DLedgerUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -401,6 +402,7 @@ public class DLedgerLeaderElector {
                 continue;
             }
             HeartBeatRequest heartBeatRequest = new HeartBeatRequest();
+            heartBeatRequest.setRequestNum(String.valueOf(CommonUtil.getSeq()));
             heartBeatRequest.setGroup(memberState.getGroup());
             heartBeatRequest.setLocalId(memberState.getSelfId());
             heartBeatRequest.setRemoteId(id);
@@ -557,6 +559,7 @@ public class DLedgerLeaderElector {
         List<CompletableFuture<VoteResponse>> responses = new ArrayList<>();
         for (String id : memberState.getPeerMap().keySet()) {
             VoteRequest voteRequest = new VoteRequest();
+            voteRequest.setRequestNum(String.valueOf(CommonUtil.getSeq()));//发送序号
             voteRequest.setGroup(memberState.getGroup());
             voteRequest.setLedgerEndIndex(ledgerEndIndex);//发起投票节点维护的已知的最大日志条目索引。
             voteRequest.setLedgerEndTerm(ledgerEndTerm);//发起投票节点维护的已知的最大投票轮次。

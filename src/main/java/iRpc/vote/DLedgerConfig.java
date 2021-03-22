@@ -35,9 +35,9 @@ public class DLedgerConfig {
 
     private String group = "default";
 
-    private String selfId = "n0";
+    private String selfId = "n0";//当前服务节点id
 
-    private String peers = "n0-localhost:20911";
+    private String peers = "n0-localhost:10916";//当前rpc集群所有节点信息，用分号分割
 
     private String storeBaseDir = File.separator + "tmp" + File.separator + "dledgerstore";
 

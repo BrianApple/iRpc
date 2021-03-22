@@ -5,6 +5,7 @@ import iRpc.base.messageDeal.MessageReciever;
 import iRpc.base.messageDeal.MessageType;
 import iRpc.cache.CommonLocalCache;
 import iRpc.dataBridge.RecieveData;
+import iRpc.util.CommonUtil;
 import io.netty.channel.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,13 +31,14 @@ import java.util.List;
 public class RemoteClient {
 	protected static Logger logger = LoggerFactory.getLogger(RemoteClient.class);
 	private final Bootstrap bootstrap = new Bootstrap();
-    private final EventLoopGroup eventLoopGroupWorker;
+	private final EventLoopGroup eventLoopGroupWorker;
 	private Channel channel;
-	public RemoteClient(){
+
+	public RemoteClient() {
 		eventLoopGroupWorker = new NioEventLoopGroup(1, new ThreadFactoryImpl("netty_rpc_client_", false));
 	}
 
-	public void start(String ip ,int port,String channelName) throws InterruptedException{
+	public void start(String ip, int port, String channelName) throws InterruptedException {
 		ClientHandler clientHandler = new ClientHandler();
 		Bootstrap handler = this.bootstrap.group(this.eventLoopGroupWorker).channel(NioSocketChannel.class)//
 				//
@@ -52,55 +54,69 @@ public class RemoteClient {
 					@Override
 					public void initChannel(SocketChannel ch) throws Exception {
 						ch.pipeline().addLast(
-								 new RpcClientEncoder(), //
-								 new RpcClientDecoder(),
-								clientHandler);//获取数据
+								new IOTGateWacthDog(bootstrap, ip, port, CommonUtil.timer, true) {
+									@Override
+									protected void channelRead0(ChannelHandlerContext ctx, Object msg) throws Exception {
+										ctx.fireChannelRead(msg);
+									}
+
+									@Override
+									public ChannelHandler[] getChannelHandlers() {
+										return new ChannelHandler[]{
+												new RpcClientEncoder(), //
+												new RpcClientDecoder(),
+												clientHandler
+										};
+									}
+
+								});
 					}
 				});
+
 		/**
-		*
-		*/
-		logger.info("rpc client is connected to server {}:{}",ip, port);
+		 *
+		 */
+		logger.info("rpc client is connected to server {}:{}", ip, port);
 		ChannelFuture future = handler.connect(ip, port).sync().addListener(new ChannelFutureListener() {
 			@Override
 			public void operationComplete(ChannelFuture channelFuture) throws Exception {
-				channel=channelFuture.channel();
-				CommonLocalCache.ChannelCache.putRet(channelName,channel);
+				channel = channelFuture.channel();
+				CommonLocalCache.ChannelCache.putRet(channelName, channel);
 			}
 		});
 	}
-}
 
-@ChannelHandler.Sharable
-class ClientHandler extends ChannelDuplexHandler {
-	/**
-	 * 处理rpc服务端响应消息
-	 * @param ctx
-	 * @param msg
-	 * @throws Exception
-	 */
-	@Override
-	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-		if (msg instanceof List) {
-			List<RecieveData> listData = (List)msg ;
-			int size = listData.size();
-			for (int i = 0 ; i < size ; i++){
-				RecieveData recieveData = listData.get(i);
-				switch (MessageType.getMessageType(recieveData.getMsgType())){
-					case BASE_MSG:
-						ResponseData responseData = (ResponseData) recieveData.getData();
-						MessageReciever.reciveMsg(new Runnable() {
-							@Override
-							public void run() {
-								String responseNum =responseData.getResponseNum();
-								//执行回调
-								CommonLocalCache.AsynTaskCache.getAsynTask(responseNum).run(responseData);
-							}
-						});
-					case HEART_MSG:
-						break;
-					case VOTE_MMSG:
-						break;
+	@ChannelHandler.Sharable
+	class ClientHandler extends ChannelDuplexHandler {
+		/**
+		 * 处理rpc服务端响应消息
+		 *
+		 * @param ctx
+		 * @param msg
+		 * @throws Exception
+		 */
+		@Override
+		public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+			if (msg instanceof List) {
+				List<RecieveData> listData = (List) msg;
+				int size = listData.size();
+				for (int i = 0; i < size; i++) {
+					RecieveData recieveData = listData.get(i);
+					switch (MessageType.getMessageType(recieveData.getMsgType())) {
+						case BASE_MSG:
+						case HEART_MSG:
+						case VOTE_MMSG:
+							ResponseData responseData = (ResponseData) recieveData.getData();
+							MessageReciever.reciveMsg(new Runnable() {
+								@Override
+								public void run() {
+									String responseNum = responseData.getResponseNum();
+									//执行回调
+									CommonLocalCache.AsynTaskCache.getAsynTask(responseNum).run(responseData);
+								}
+							});
+							break;
+					}
 				}
 			}
 		}
