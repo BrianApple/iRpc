@@ -20,7 +20,11 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.timeout.IdleStateHandler;
 
+import java.net.ConnectException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 通用通讯客户端
@@ -38,7 +42,7 @@ public class RemoteClient {
 		eventLoopGroupWorker = new NioEventLoopGroup(1, new ThreadFactoryImpl("netty_rpc_client_", false));
 	}
 
-	public void start(String ip, int port, String channelName) throws InterruptedException {
+	public void start(String ip, int port, String channelName) {
 		ClientHandler clientHandler = new ClientHandler();
 		Bootstrap handler = this.bootstrap.group(this.eventLoopGroupWorker).channel(NioSocketChannel.class)//
 				//
@@ -54,22 +58,21 @@ public class RemoteClient {
 					@Override
 					public void initChannel(SocketChannel ch) throws Exception {
 						ch.pipeline().addLast(
-								new IOTGateWacthDog(bootstrap, ip, port, CommonUtil.timer, true) {
-									@Override
-									protected void channelRead0(ChannelHandlerContext ctx, Object msg) throws Exception {
-										ctx.fireChannelRead(msg);
-									}
+							new IOTGateWacthDog(bootstrap, ip, port, CommonUtil.timer, true) {
+								@Override
+								protected void channelRead0(ChannelHandlerContext ctx, Object msg) throws Exception {
+									ctx.fireChannelRead(msg);
+								}
 
-									@Override
-									public ChannelHandler[] getChannelHandlers() {
-										return new ChannelHandler[]{
-												new RpcClientEncoder(), //
-												new RpcClientDecoder(),
-												clientHandler
-										};
-									}
-
-								});
+								@Override
+								public ChannelHandler[] getChannelHandlers() {
+									return new ChannelHandler[]{
+											new RpcClientEncoder(), //
+											new RpcClientDecoder(),
+											clientHandler
+									};
+								}
+							});
 					}
 				});
 
@@ -77,13 +80,25 @@ public class RemoteClient {
 		 *
 		 */
 		logger.info("rpc client is connected to server {}:{}", ip, port);
-		ChannelFuture future = handler.connect(ip, port).sync().addListener(new ChannelFutureListener() {
-			@Override
-			public void operationComplete(ChannelFuture channelFuture) throws Exception {
-				channel = channelFuture.channel();
-				CommonLocalCache.ChannelCache.putRet(channelName, channel);
+		if(IRpcContext.DEFUAL_CHANNEL.equals(channelName )){
+			 try {
+				handler.connect(ip, port).sync().addListener(new ChannelFutureListener() {
+					@Override
+					public void operationComplete(ChannelFuture channelFuture) throws Exception {
+						channel = channelFuture.channel();
+						CommonLocalCache.ChannelCache.putRet(channelName, channel);
+					}
+				});
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
-		});
+		}else{
+			boolean isConnected = handler.connect(ip, port).awaitUninterruptibly(6, TimeUnit.SECONDS);
+		}
+		
+		
+
 	}
 
 	@ChannelHandler.Sharable
@@ -120,5 +135,17 @@ public class RemoteClient {
 				}
 			}
 		}
+
+		@Override
+		public void channelActive(ChannelHandlerContext ctx) throws Exception {
+			super.channelActive(ctx);
+			channel = ctx.channel();
+			InetSocketAddress inetSocketAddress = (InetSocketAddress)channel.remoteAddress();
+			CommonLocalCache.ChannelCache.putRet(String.format("%s:%s",
+					inetSocketAddress.getHostName(), 
+					String.valueOf(inetSocketAddress.getPort())), channel);
+		}
+		
+		
 	}
 }

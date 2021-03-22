@@ -71,10 +71,7 @@ public class ServerStarter implements Istarter{
                             String nodeName = (String) nodeInfo.get("node");
                             String ip = (String) nodeInfo.get("ip");
                             String port = String.valueOf(nodeInfo.get("port"));
-                            try {
-                                new RemoteClient().start(ip,Integer.parseInt(port),String.format("%s:%s",ip,port));
-                            } catch (InterruptedException e) {
-                            }
+                            new RemoteClient().start(ip,Integer.parseInt(port),String.format("%s:%s",ip,port));
                             sb.append(String.format("%s-%s:%s;",nodeName,ip,port));
                         }
                     });
