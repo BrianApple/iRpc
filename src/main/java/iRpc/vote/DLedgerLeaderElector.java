@@ -18,6 +18,7 @@
 package iRpc.vote;
 
 import com.alibaba.fastjson.JSON;
+import iRpc.base.concurrent.ThreadFactoryImpl;
 import iRpc.base.messageDeal.MessageSender;
 import iRpc.dataBridge.vote.*;
 import iRpc.util.CommonUtil;
@@ -31,9 +32,7 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -90,6 +89,8 @@ public class DLedgerLeaderElector {
     /**状态机管理器**/
     private StateMaintainer stateMaintainer = new StateMaintainer();
 
+    private ExecutorService executorService = Executors.newFixedThreadPool(4,new ThreadFactoryImpl("dledgerLeaderElector_",false));
+
     public DLedgerLeaderElector(DLedgerConfig dLedgerConfig, MemberState memberState ) {
         this.dLedgerConfig = dLedgerConfig;
         this.memberState = memberState;
@@ -100,7 +101,12 @@ public class DLedgerLeaderElector {
      * 启动状态管理机
      */
     public void startup() {
-        stateMaintainer.start();
+        executorService.execute(new Runnable() {
+            @Override
+            public void run() {
+                stateMaintainer.start();
+            }
+        });
         for (RoleChangeHandler roleChangeHandler : roleChangeHandlers) {
             roleChangeHandler.startup();
         }

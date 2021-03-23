@@ -52,17 +52,17 @@ public class TestRpcServer {
 		/**
 		 * 异步消息发送
 		 */
-//		MessageSender.asynBaseMsgSend( false,
-//				"iRpc.rpcService.RPCExportServiceImpl",
-//				"test",
-//				classType,
-//				argsData,
-//				new IProcessor() {
-//					@Override
-//					public void run(ResponseData ret) {
-//						System.out.println("客户端收到数据："+ret.getData());
-//					}
-//				});
+		MessageSender.asynBaseMsgSend( false,
+				"iRpc.rpcService.RPCExportServiceImpl",
+				"test",
+				classType,
+				argsData,
+				new IProcessor() {
+					@Override
+					public void run(ResponseData ret) {
+						System.out.println("客户端异步收到数据："+ret.getData());
+					}
+				});
 
 		ResponseData ret = MessageSender.synBaseMsgSend(false,
 				"iRpc.rpcService.RPCExportServiceImpl",
@@ -70,7 +70,7 @@ public class TestRpcServer {
 				classType,
 				argsData,
 				10000);
-		System.out.println("客户端收到数据："+ret.getData());
+		System.out.println("客户端同步收到数据："+ret.getData());
 		System.out.println("main方法执行结束");
 	}
 }

@@ -8,6 +8,8 @@ import iRpc.util.YamlUtil;
 import iRpc.vote.DLedgerConfig;
 import iRpc.vote.DLedgerLeaderElector;
 import iRpc.vote.MemberState;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -20,15 +22,18 @@ import java.util.concurrent.Executors;
  * @Date 2021/3/6
  */
 public class ServerStarter implements Istarter{
+    Logger logger = LoggerFactory.getLogger("serverStarter");
+
     private String pathName;
     public ServerStarter() {
         pathName = "application.yml";
         start();
+        logger.info("the profile name is {}",pathName);
     }
     public ServerStarter(String pathName) {
         this.pathName = pathName;
         start();
-
+        logger.info("the profile name is {}",pathName);
     }
 
     /**
@@ -54,35 +59,7 @@ public class ServerStarter implements Istarter{
             String serverPort  = String.valueOf( serverMap.get("serverPort"));
             String heartbeat= String.valueOf(serverMap.get("heartbeat"));
 
-            /**
-             * 集群相关节点--涉及节点选举等操作
-             */
-            if(serverMap.containsKey("ClusterNode")){
-                DLedgerConfig config = new DLedgerConfig();
-                //初始化选举器
-                List<Map<String,Object>> lists = (List<Map<String, Object>>)serverMap.get("ClusterNode");
-                StringBuffer sb = new StringBuffer("n0-localhost:20911;");
-                for (Map<String,Object> nodeInfo
-                     : lists) {
-
-                    ClusterExecutors.executorService.execute(new Runnable() {
-                        @Override
-                        public void run() {
-                            String nodeName = (String) nodeInfo.get("node");
-                            String ip = (String) nodeInfo.get("ip");
-                            String port = String.valueOf(nodeInfo.get("port"));
-                            new RemoteClient().start(ip,Integer.parseInt(port),String.format("%s:%s",ip,port));
-                            sb.append(String.format("%s-%s:%s;",nodeName,ip,port));
-                        }
-                    });
-
-                }
-                config.setPeers(sb.substring(0,sb.length()-1));
-                initLeaderElector();
-
-            }
-
-//            String nodeIp = (String) m.get("ip");
+            //            String nodeIp = (String) m.get("ip");
 //            String nodePort = (String) m.get("port");
 
 
@@ -97,6 +74,36 @@ public class ServerStarter implements Istarter{
                     }
                 }
             },String.format("server:%s",serverPort)).start();
+            /**
+             * 集群相关节点--涉及节点选举等操作
+             */
+            if(serverMap.containsKey("ClusterNode")){
+                DLedgerConfig config = new DLedgerConfig();
+                //初始化选举器
+                List<Map<String,Object>> lists = (List<Map<String, Object>>)serverMap.get("ClusterNode");
+                StringBuffer sb = new StringBuffer();
+                for (Map<String,Object> nodeInfo
+                     : lists) {
+                    String nodeName = (String) nodeInfo.get("node");
+                    String ip = (String) nodeInfo.get("ip");
+                    String port = String.valueOf(nodeInfo.get("port"));
+                    sb.append(String.format("%s-%s:%s;",nodeName,ip,port));
+                    ClusterExecutors.executorService.execute(new Runnable() {
+                        @Override
+                        public void run() {
+                            new RemoteClient().start(ip,Integer.parseInt(port),String.format("%s:%s",ip,port));
+
+                        }
+                    });
+
+                }
+                logger.info("cluster peers info {}" , sb.substring(0,sb.length()-1));
+                config.setPeers(sb.substring(0,sb.length()-1));
+                initLeaderElector();
+
+            }
+
+
         }
         return true;
     }

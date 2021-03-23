@@ -18,13 +18,9 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.timeout.IdleStateHandler;
 
-import java.net.ConnectException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
  * 通用通讯客户端
@@ -72,15 +68,16 @@ public class RemoteClient {
 											clientHandler
 									};
 								}
-							});
+							}.getChannelHandlers());
 					}
 				});
 
 		/**
 		 *
 		 */
-		logger.info("rpc client is connected to server {}:{}", ip, port);
+		logger.info("rpc client is connect to server {}:{}", ip, port);
 		if(IRpcContext.DEFUAL_CHANNEL.equals(channelName )){
+			//irpc客户端连接
 			 try {
 				handler.connect(ip, port).sync().addListener(new ChannelFutureListener() {
 					@Override
@@ -94,7 +91,22 @@ public class RemoteClient {
 				e.printStackTrace();
 			}
 		}else{
-			boolean isConnected = handler.connect(ip, port).awaitUninterruptibly(6, TimeUnit.SECONDS);
+				while(true){
+					ChannelFuture channelFuture = handler.connect(ip, port).awaitUninterruptibly();
+					if(channelFuture.isSuccess()){
+						logger.info("cluster node {} connected success",String.format("%s:%s",ip,port));
+						channel = channelFuture.channel();
+						CommonLocalCache.ChannelCache.putRet(channelName, channel);
+						break;
+					}else {
+						logger.info("cluster node {} connected failed ,try again later.....",String.format("%s:%s",ip,port));
+					}
+					try {
+						Thread.sleep(2000);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+				}
 		}
 		
 		
@@ -136,6 +148,11 @@ public class RemoteClient {
 			}
 		}
 
+		/**
+		 * 无论是
+		 * @param ctx
+		 * @throws Exception
+		 */
 		@Override
 		public void channelActive(ChannelHandlerContext ctx) throws Exception {
 			super.channelActive(ctx);

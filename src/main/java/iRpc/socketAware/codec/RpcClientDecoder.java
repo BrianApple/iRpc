@@ -14,6 +14,8 @@ import iRpc.cache.CommonLocalCache;
 import iRpc.dataBridge.RecieveData;
 import iRpc.dataBridge.RequestData;
 import iRpc.dataBridge.ResponseData;
+import iRpc.dataBridge.vote.HeartBeatResponse;
+import iRpc.dataBridge.vote.VoteResponse;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
@@ -49,9 +51,23 @@ public class RpcClientDecoder extends ByteToMessageDecoder {
 							ResponseData responseData = SerializationUtil.deserialize(contentData, ResponseData.class);
 							RecieveData<ResponseData> recieveData= new RecieveData<ResponseData>(msgType,responseData);
 							list.add(recieveData);
+							break;
 						case HEART_MSG:
+							//基本消息类型的数据响应
+							byte[] heartData = new byte[dataLen];
+							in.readBytes(heartData);//报头数据
+							HeartBeatResponse heartBeatResponse = SerializationUtil.deserialize(heartData, HeartBeatResponse.class);
+							RecieveData<HeartBeatResponse> recieveHeartData= new RecieveData<HeartBeatResponse>(msgType,heartBeatResponse);
+							list.add(recieveHeartData);
+
 							break;
 						case VOTE_MMSG:
+							//基本消息类型的数据响应
+							byte[] voteData = new byte[dataLen];
+							in.readBytes(voteData);//报头数据
+							VoteResponse voteResponse = SerializationUtil.deserialize(voteData, VoteResponse.class);
+							RecieveData<VoteResponse> recieveVoteData= new RecieveData<VoteResponse>(msgType,voteResponse);
+							list.add(recieveVoteData);
 							break;
 					}
 				}else{

@@ -1,0 +1,18 @@
+## node2 信息
+#rpc客户端配置信息
+#rpc客户端配置信息client:
+serverNode:
+  - ip: 127.0.0.1 # 第一个节点是主节点即master节点
+    port: 10917
+  - ip: 127.0.0.1
+    port: 10916
+server:
+  serverPort: 10917
+  heartbeat: 60 # min
+  ClusterNode: #如果使用单机，则不配置该项,node从n0开始，n0属于自己
+    - node: n0
+      ip: 127.0.0.1
+      port: 10917
+    - node: n1
+      ip: 127.0.0.1
+      port: 10916
