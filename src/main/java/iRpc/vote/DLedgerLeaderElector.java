@@ -141,6 +141,7 @@ public class DLedgerLeaderElector {
         } else if (memberState.isFollower()) {
             maintainAsFollower();
         } else {
+            //默认状态
             maintainAsCandidate();
         }
     }

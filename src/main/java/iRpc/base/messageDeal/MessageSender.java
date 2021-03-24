@@ -95,6 +95,9 @@ public class MessageSender implements IMessageSender {
      */
     private  static ResponseData synMessageSend2Server(int msgType, IDataSend data, int timeout,String channelName){
         Channel channel = CommonLocalCache.ChannelCache.getChannel(channelName);
+        if (channel == null){
+            return new ResponseData(data.getRequestNum(),500);
+        }
         ResponseData ret = synMessageSend(new SendData<IDataSend>(msgType,channel,data),timeout);
         return ret == null ? new ResponseData(data.getRequestNum(),500) : ret;
     }
@@ -107,6 +110,9 @@ public class MessageSender implements IMessageSender {
      */
     private static boolean asynMessaSend2Server(int msgType,IDataSend data,IProcessor task,String channelName){
         Channel channel = CommonLocalCache.ChannelCache.getChannel(channelName);
+        if (channel == null){
+            return false;
+        }
         boolean suc = asynMessageSend(new SendData<IDataSend>(msgType,channel,data),task);
         return suc;
     }
@@ -198,7 +204,7 @@ public class MessageSender implements IMessageSender {
     public static CompletableFuture<VoteResponse> vote(IDataSend sendData,String channelName){
 
         CompletableFuture<VoteResponse> future = new CompletableFuture<>();
-        asynMessaSend2Server(2, sendData, new IProcessor() {
+        boolean isSuc = asynMessaSend2Server(2, sendData, new IProcessor() {
             @Override
             public void run(ResponseData ret) {
                 VoteResponse voteResponse = (VoteResponse)ret.getData();
@@ -209,6 +215,9 @@ public class MessageSender implements IMessageSender {
                 }
             }
         },channelName);
+        if (!isSuc){
+            future.completeExceptionally(new RuntimeException("data for vote send failed"));
+        }
         return future;
     }
 
@@ -219,7 +228,7 @@ public class MessageSender implements IMessageSender {
      */
     public static CompletableFuture<HeartBeatResponse>  heartBeat(IDataSend sendData,String channelName){
         CompletableFuture<HeartBeatResponse> future = new CompletableFuture<>();
-        asynMessaSend2Server(0, sendData, new IProcessor() {
+        boolean isSuc = asynMessaSend2Server(0, sendData, new IProcessor() {
             @Override
             public void run(ResponseData ret) {
                 HeartBeatResponse heartBeatResponse = (HeartBeatResponse)ret.getData();
@@ -230,6 +239,9 @@ public class MessageSender implements IMessageSender {
                 }
             }
         },channelName);
+        if (!isSuc){
+            future.completeExceptionally(new RuntimeException("data for heartBeat send failed"));
+        }
         return future;
     }
 

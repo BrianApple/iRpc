@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.alibaba.fastjson.JSON;
 import iRpc.base.SerializationUtil;
 import iRpc.base.exception.IRPCServerNotFound;
 import iRpc.base.messageDeal.MessageType;
@@ -142,11 +143,13 @@ public class RemoteServer {
                             ctx.writeAndFlush(sendData);
                             break;
                         case HEART_MSG:
+                            logger.debug("服务端收到心跳消息：{}", JSON.toJSONString(recieveData.getData()));
                             DLedgerLeaderElector elector4h = (DLedgerLeaderElector) CommonLocalCache.BasicInfoCache.getProperty("elector");
                             HeartBeatRequest heartBeatRequest4h = (HeartBeatRequest) recieveData.getData();
                             elector4h.handleHeartBeat(heartBeatRequest4h);
                             break;
                         case VOTE_MMSG:
+                            logger.debug("服务端收到选举消息：{}", JSON.toJSONString(recieveData.getData()));
                             DLedgerLeaderElector elector4v = (DLedgerLeaderElector) CommonLocalCache.BasicInfoCache.getProperty("elector");
                             VoteRequest voteRequest = (VoteRequest) recieveData.getData();
                             elector4v.handleVote(voteRequest,false);

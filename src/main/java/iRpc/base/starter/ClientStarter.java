@@ -15,7 +15,7 @@ import java.util.Map;
 public class ClientStarter implements Istarter{
     private String pathName;
     public ClientStarter() {
-        pathName = "application.yml";
+        pathName = IRpcContext.PropertyName;
         start();
     }
     public ClientStarter(String pathName) {

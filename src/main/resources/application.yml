@@ -16,3 +16,6 @@ server:
     - node: n1
       ip: 127.0.0.1
       port: 10917
+    - node: n2
+      ip: 127.0.0.1
+      port: 10918

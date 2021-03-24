@@ -1,5 +1,6 @@
 package iRpc.base.starter;
 
+import iRpc.base.IRpcContext;
 import iRpc.base.concurrent.ThreadFactoryImpl;
 import iRpc.cache.CommonLocalCache;
 import iRpc.socketAware.RemoteClient;
@@ -26,7 +27,7 @@ public class ServerStarter implements Istarter{
 
     private String pathName;
     public ServerStarter() {
-        pathName = "application.yml";
+        pathName = IRpcContext.PropertyName;
         start();
         logger.info("the profile name is {}",pathName);
     }
@@ -40,9 +41,8 @@ public class ServerStarter implements Istarter{
      * 初始化选举器，只有集群条件下才会选举
      * @return
      */
-    public boolean initLeaderElector(){
+    public boolean initLeaderElector(DLedgerConfig dLedgerConfig){
         if(CommonLocalCache.BasicInfoCache.getProperty("elector") == null){
-            DLedgerConfig dLedgerConfig = new DLedgerConfig();
             DLedgerLeaderElector elector = new DLedgerLeaderElector(dLedgerConfig,new MemberState(dLedgerConfig));
             CommonLocalCache.BasicInfoCache.putProperty("elector",elector);
             elector.startup();
@@ -87,6 +87,9 @@ public class ServerStarter implements Istarter{
                     String nodeName = (String) nodeInfo.get("node");
                     String ip = (String) nodeInfo.get("ip");
                     String port = String.valueOf(nodeInfo.get("port"));
+                    if(serverPort.equals(port)){
+                        config.setSelfId(nodeName);
+                    }
                     sb.append(String.format("%s-%s:%s;",nodeName,ip,port));
                     ClusterExecutors.executorService.execute(new Runnable() {
                         @Override
@@ -99,7 +102,7 @@ public class ServerStarter implements Istarter{
                 }
                 logger.info("cluster peers info {}" , sb.substring(0,sb.length()-1));
                 config.setPeers(sb.substring(0,sb.length()-1));
-                initLeaderElector();
+                initLeaderElector(config);
 
             }
 
