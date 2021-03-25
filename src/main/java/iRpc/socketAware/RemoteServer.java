@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.BiConsumer;
 
 import com.alibaba.fastjson.JSON;
 import iRpc.base.SerializationUtil;
@@ -16,7 +18,9 @@ import iRpc.cache.CommonLocalCache;
 import iRpc.dataBridge.RecieveData;
 import iRpc.dataBridge.SendData;
 import iRpc.dataBridge.vote.HeartBeatRequest;
+import iRpc.dataBridge.vote.HeartBeatResponse;
 import iRpc.dataBridge.vote.VoteRequest;
+import iRpc.dataBridge.vote.VoteResponse;
 import iRpc.vote.DLedgerLeaderElector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -146,13 +150,37 @@ public class RemoteServer {
                             logger.debug("服务端收到心跳消息：{}", JSON.toJSONString(recieveData.getData()));
                             DLedgerLeaderElector elector4h = (DLedgerLeaderElector) CommonLocalCache.BasicInfoCache.getProperty("elector");
                             HeartBeatRequest heartBeatRequest4h = (HeartBeatRequest) recieveData.getData();
-                            elector4h.handleHeartBeat(heartBeatRequest4h);
+                            CompletableFuture<HeartBeatResponse> heartBeatResponseCompletableFuture = elector4h.handleHeartBeat(heartBeatRequest4h);
+                            heartBeatResponseCompletableFuture.whenCompleteAsync(new BiConsumer<HeartBeatResponse, Throwable>() {
+                                @Override
+                                public void accept(HeartBeatResponse heartBeatResponse, Throwable throwable) {
+                                    ResponseData rpcResponse = new ResponseData(heartBeatResponse.getRequestNum(),200);
+                                    if (throwable != null){
+                                        //异常时，不响应
+                                    }else{
+                                        rpcResponse.setData(heartBeatResponse);
+                                        ctx.writeAndFlush(rpcResponse);
+                                    }
+                                }
+                            });
                             break;
                         case VOTE_MMSG:
                             logger.debug("服务端收到选举消息：{}", JSON.toJSONString(recieveData.getData()));
                             DLedgerLeaderElector elector4v = (DLedgerLeaderElector) CommonLocalCache.BasicInfoCache.getProperty("elector");
                             VoteRequest voteRequest = (VoteRequest) recieveData.getData();
-                            elector4v.handleVote(voteRequest,false);
+                            CompletableFuture<VoteResponse>  completableFuture= elector4v.handleVote(voteRequest,false);
+                            completableFuture.whenCompleteAsync(new BiConsumer<VoteResponse, Throwable>() {
+                                @Override
+                                public void accept(VoteResponse voteResponse, Throwable throwable) {
+                                    ResponseData rpcResponse = new ResponseData(voteResponse.getRequestNum(),200);
+                                    if (throwable != null){
+                                        //异常时，不响应
+                                    }else{
+                                        rpcResponse.setData(voteResponse);
+                                        ctx.writeAndFlush(rpcResponse);
+                                    }
+                                }
+                            });
                             break;
                     }
                 }

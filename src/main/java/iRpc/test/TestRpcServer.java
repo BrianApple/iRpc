@@ -1,17 +1,22 @@
 package iRpc.test;
 
+import iRpc.base.IRpcContext;
 import iRpc.base.messageDeal.MessageSender;
 import iRpc.base.processor.IProcessor;
 import iRpc.base.starter.ClientStarter;
 import iRpc.base.starter.ServerStarter;
 import iRpc.dataBridge.RequestData;
 import iRpc.dataBridge.ResponseData;
+import iRpc.dataBridge.vote.VoteRequest;
+import iRpc.dataBridge.vote.VoteResponse;
 import iRpc.socketAware.RemoteServer;
+import iRpc.util.CommonUtil;
 import org.checkerframework.checker.units.qual.C;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * RPC测试入口
@@ -32,13 +37,13 @@ public class TestRpcServer {
 	public static void ServerRpc(){
 		ServerStarter serverStarter = new ServerStarter();
 		try {
-			Thread.sleep(2000);
+			Thread.sleep(4000);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
 		ClientStarter clientStarter = new ClientStarter();
 		try {
-			Thread.sleep(2000);
+			Thread.sleep(5000);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -64,13 +69,29 @@ public class TestRpcServer {
 //					}
 //				});
 
-		ResponseData ret = MessageSender.synBaseMsgSend(false,
-				"iRpc.rpcService.RPCExportServiceImpl",
-				"test",
-				classType,
-				argsData,
-				10000);
-		System.out.println("客户端同步收到数据："+ret.getData());
-		System.out.println("main方法执行结束");
+//		ResponseData ret = MessageSender.synBaseMsgSend(false,
+//				"iRpc.rpcService.RPCExportServiceImpl",
+//				"test",
+//				classType,
+//				argsData,
+//				10000);
+//		System.out.println("客户端同步收到数据："+ret.getData());
+//		System.out.println("main方法执行结束");
+
+
+//		VoteRequest voteRequest = new VoteRequest();
+//		voteRequest.setRequestNum(String.valueOf(CommonUtil.getSeq()));//发送序号
+//		voteRequest.setGroup("testgroup");
+//		voteRequest.setLedgerEndIndex(-1);//发起投票节点维护的已知的最大日志条目索引。
+//		voteRequest.setLedgerEndTerm(-1);//发起投票节点维护的已知的最大投票轮次。
+//		voteRequest.setLeaderId("n0");
+//		voteRequest.setTerm(-1);//发起投票的节点当前的投票轮次
+//		voteRequest.setRemoteId("n0");
+//		CompletableFuture<VoteResponse> voteResponse;
+//		voteResponse = MessageSender.vote(voteRequest, IRpcContext.DEFUAL_CHANNEL);
+
+
+
+
 	}
 }

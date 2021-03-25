@@ -127,6 +127,7 @@ public class RequestOrResponse implements IDataSend {
         this.localId = other.localId;
         this.remoteId = other.remoteId;
         this.leaderId = other.leaderId;
+        this.requestNum = other.requestNum;
         return this;
     }
 
@@ -141,6 +142,6 @@ public class RequestOrResponse implements IDataSend {
 
     @Override
     public void setRequestNum(String requestNum) {
-
+        this.requestNum = requestNum;
     }
 }

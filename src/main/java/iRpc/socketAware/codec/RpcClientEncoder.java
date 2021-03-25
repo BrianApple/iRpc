@@ -30,7 +30,7 @@ public class RpcClientEncoder extends MessageToByteEncoder<Object> {
 			case HEART_MSG:
 			case VOTE_MMSG:
 				//基本消息
-				byte[] data = SerializationUtil.serialize((RequestData)sendData.getData());
+				byte[] data = SerializationUtil.serialize(sendData.getData());
 				out.writeShort(data.length+1);
 				out.writeByte(sendData.getMsgType());
 				out.writeBytes(data);

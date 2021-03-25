@@ -18,6 +18,9 @@
 package iRpc.dataBridge.vote;
 
 public class HeartBeatResponse extends RequestOrResponse {
+    public HeartBeatResponse(HeartBeatRequest request){
+        this.requestNum  = request.getRequestNum();
+    }
 
     public HeartBeatResponse term(long term) {
         this.term = term;

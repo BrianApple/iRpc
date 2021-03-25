@@ -5,6 +5,8 @@ import iRpc.base.messageDeal.MessageReciever;
 import iRpc.base.messageDeal.MessageType;
 import iRpc.cache.CommonLocalCache;
 import iRpc.dataBridge.RecieveData;
+import iRpc.dataBridge.vote.HeartBeatResponse;
+import iRpc.dataBridge.vote.VoteResponse;
 import iRpc.util.CommonUtil;
 import io.netty.channel.*;
 import org.slf4j.Logger;
@@ -133,6 +135,9 @@ public class RemoteClient {
 						case BASE_MSG:
 						case HEART_MSG:
 						case VOTE_MMSG:
+							/**
+							 * 不同消息类型，responseData.getData()返回值不同
+							 */
 							ResponseData responseData = (ResponseData) recieveData.getData();
 							MessageReciever.reciveMsg(new Runnable() {
 								@Override
@@ -143,6 +148,27 @@ public class RemoteClient {
 								}
 							});
 							break;
+
+//							HeartBeatResponse heartBeatResponse = (HeartBeatResponse) recieveData.getData();
+//							MessageReciever.reciveMsg(new Runnable() {
+//								@Override
+//								public void run() {
+//									String responseNum = heartBeatResponse.getRequestNum();
+//									//执行回调
+//									CommonLocalCache.AsynTaskCache.getAsynTask(responseNum).run(heartBeatResponse);
+//								}
+//							});
+//
+//							VoteResponse voteResponse = (VoteResponse) recieveData.getData();
+//							MessageReciever.reciveMsg(new Runnable() {
+//								@Override
+//								public void run() {
+//									String responseNum = voteResponse.getRequestNum();
+//									//执行回调
+//									CommonLocalCache.AsynTaskCache.getAsynTask(responseNum).run(voteResponse);
+//								}
+//							});
+//							break;
 					}
 				}
 			}
