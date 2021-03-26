@@ -45,29 +45,14 @@ public class RpcClientDecoder extends ByteToMessageDecoder {
 					int msgType = in.readByte();
 					switch (MessageType.getMessageType(msgType)){
 						case BASE_MSG:
+						case HEART_MSG:
+						case VOTE_MMSG:
 							//基本消息类型的数据响应
 							byte[] contentData = new byte[dataLen];
 							in.readBytes(contentData);//报头数据
 							ResponseData responseData = SerializationUtil.deserialize(contentData, ResponseData.class);
 							RecieveData<ResponseData> recieveData= new RecieveData<ResponseData>(msgType,responseData);
 							list.add(recieveData);
-							break;
-						case HEART_MSG:
-							//基本消息类型的数据响应
-							byte[] heartData = new byte[dataLen];
-							in.readBytes(heartData);//报头数据
-							HeartBeatResponse heartBeatResponse = SerializationUtil.deserialize(heartData, HeartBeatResponse.class);
-							RecieveData<HeartBeatResponse> recieveHeartData= new RecieveData<HeartBeatResponse>(msgType,heartBeatResponse);
-							list.add(recieveHeartData);
-
-							break;
-						case VOTE_MMSG:
-							//基本消息类型的数据响应
-							byte[] voteData = new byte[dataLen];
-							in.readBytes(voteData);//报头数据
-							VoteResponse voteResponse = SerializationUtil.deserialize(voteData, VoteResponse.class);
-							RecieveData<VoteResponse> recieveVoteData= new RecieveData<VoteResponse>(msgType,voteResponse);
-							list.add(recieveVoteData);
 							break;
 					}
 				}else{

@@ -156,11 +156,14 @@ public class RemoteServer {
                                 public void accept(HeartBeatResponse heartBeatResponse, Throwable throwable) {
                                     ResponseData rpcResponse = new ResponseData(heartBeatResponse.getRequestNum(),200);
                                     if (throwable != null){
-                                        //异常时，不响应
+                                        //异常时
+                                        rpcResponse.setReturnCode(500);
+                                        rpcResponse.setErroInfo(throwable);
                                     }else{
                                         rpcResponse.setData(heartBeatResponse);
-                                        ctx.writeAndFlush(rpcResponse);
                                     }
+                                    SendData<ResponseData> sendData = new SendData<ResponseData>(recieveData.getMsgType(), rpcResponse);
+                                    ctx.writeAndFlush(sendData);
                                 }
                             });
                             break;
@@ -174,11 +177,15 @@ public class RemoteServer {
                                 public void accept(VoteResponse voteResponse, Throwable throwable) {
                                     ResponseData rpcResponse = new ResponseData(voteResponse.getRequestNum(),200);
                                     if (throwable != null){
-                                        //异常时，不响应
+                                        //异常时
+                                        rpcResponse.setReturnCode(500);
+                                        rpcResponse.setErroInfo(throwable);
                                     }else{
                                         rpcResponse.setData(voteResponse);
-                                        ctx.writeAndFlush(rpcResponse);
                                     }
+                                    logger.debug("服务端处理完收到的选举消息时响应：{}", JSON.toJSONString(voteResponse));
+                                    SendData<ResponseData> sendData = new SendData<ResponseData>(recieveData.getMsgType(), rpcResponse);
+                                    ctx.writeAndFlush(sendData);
                                 }
                             });
                             break;

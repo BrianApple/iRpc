@@ -37,6 +37,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static iRpc.dataBridge.vote.VoteResponse.ParseResult.WAIT_TO_VOTE_NEXT;
+
 /**
  * @Description:    描述
  * @author: https://github.com/openmessaging/openmessaging-storage-dledger
@@ -142,7 +144,7 @@ public class DLedgerLeaderElector {
         } else if (memberState.isFollower()) {
             maintainAsFollower();
         } else {
-            //默认状态
+            //默认状态--candidate和follower才能当作voter
             maintainAsCandidate();
         }
     }
@@ -195,10 +197,12 @@ public class DLedgerLeaderElector {
             if (!memberState.isCandidate()) {
                 return;
             }
-            if (lastParseResult == VoteResponse.ParseResult.WAIT_TO_VOTE_NEXT || needIncreaseTermImmediately) {
+            if (lastParseResult == WAIT_TO_VOTE_NEXT || needIncreaseTermImmediately) {
                 // 如果上一次的投票结果为“等待下一次投票”或应该“立即开启投票”，则根据当前节点的状态机获取下一轮的投票轮次
                 long prevTerm = memberState.currTerm();
-                term = memberState.nextTerm();
+
+                term = memberState.nextTerm();//清空已投过的票
+                System.err.println("清空当前节点之前投票，当前term = "+ term);
                 logger.info("{}_[INCREASE_TERM] from {} to {}", memberState.getSelfId(), prevTerm, term);
                 lastParseResult = VoteResponse.ParseResult.WAIT_TO_REVOTE;
             } else {
@@ -241,7 +245,7 @@ public class DLedgerLeaderElector {
                     if (ex != null) {
                         throw ex;
                     }
-                    logger.info("[{}][GetVoteResponse] {}", memberState.getSelfId(), JSON.toJSONString(x));
+                    logger.info("[{}][投票回调执行] {}", memberState.getSelfId(), JSON.toJSONString(x));
                     if (x.getVoteResult() != VoteResponse.RESULT.UNKNOWN) {
                         /**如果投票结果不是UNKNOW，则有效投票数量增1**/
                         validNum.incrementAndGet();
@@ -306,17 +310,17 @@ public class DLedgerLeaderElector {
             // ignore
         }
 
-        // 根据收集的投票结果判断是否能成为Leader
+        // 统计选举时间
         lastVoteCost = DLedgerUtils.elapsed(startVoteTimeMs);
         VoteResponse.ParseResult parseResult;
         if (knownMaxTermInGroup.get() > term) {
             // 如果对端的投票轮次大于发起投票的节点，则该节点使用对端的轮次，重新进入到Candidate状态，并且重置投票计时器，其值为"1个常规计时器"
-            parseResult = VoteResponse.ParseResult.WAIT_TO_VOTE_NEXT;
+            parseResult = WAIT_TO_VOTE_NEXT;
             nextTimeToRequestVote = getNextTimeToRequestVote();
             changeRoleToCandidate(knownMaxTermInGroup.get());
         } else if (alreadyHasLeader.get()) {
             // 如果已经存在Leader，该节点重新进入到Candidate，并重置定时器
-            parseResult = VoteResponse.ParseResult.WAIT_TO_VOTE_NEXT;
+            parseResult = WAIT_TO_VOTE_NEXT;
             nextTimeToRequestVote = getNextTimeToRequestVote() + heartBeatTimeIntervalMs * maxHeartBeatLeak;
         } else if (!memberState.isQuorum(validNum.get())) {
             // 如果收到的有效票数未超过半数，则重置计时器为"1个常规计时器"，然后等待重新投票
@@ -335,16 +339,16 @@ public class DLedgerLeaderElector {
             nextTimeToRequestVote = getNextTimeToRequestVote();
         } else {
             // 其他情况，开启下一轮投票
-            parseResult = VoteResponse.ParseResult.WAIT_TO_VOTE_NEXT;
+            parseResult = WAIT_TO_VOTE_NEXT;
             nextTimeToRequestVote = getNextTimeToRequestVote();
         }
         lastParseResult = parseResult;
-        logger.info("[{}] [PARSE_VOTE_RESULT] cost={} term={} memberNum={} allNum={} acceptedNum={} notReadyTermNum={} biggerLedgerNum={} alreadyHasLeader={} maxTerm={} result={}",
+        logger.info("[{}] [投票综合结果] cost={} term={} memberNum={} allNum={} acceptedNum={} notReadyTermNum={} biggerLedgerNum={} alreadyHasLeader={} maxTerm={} result={}",
                 memberState.getSelfId(), lastVoteCost, term, memberState.peerSize(), allNum, acceptedNum, notReadyTermNum, biggerLedgerNum, alreadyHasLeader, knownMaxTermInGroup.get(), parseResult);
 
         if (parseResult == VoteResponse.ParseResult.PASSED) {
             // 如果投票成功，则状态机状态设置为Leader
-            logger.info("[{}] [VOTE_RESULT] has been elected to be the leader in term {}", memberState.getSelfId(), term);
+            logger.info("[{}] [投票最终结果] has been elected to be the leader in term {}", memberState.getSelfId(), term);
             changeRoleToLeader(term);
         }
 
@@ -581,7 +585,6 @@ public class DLedgerLeaderElector {
                  */
                 voteResponse = handleVote(voteRequest, true);
             } else {
-                //async
                 voteResponse = MessageSender.vote(voteRequest, memberState.getPeerMap().get(id));
             }
             responses.add(voteResponse);
@@ -590,7 +593,7 @@ public class DLedgerLeaderElector {
         return responses;
     }
     /**
-     * 处理接受到的投票请求
+     * 处理接收到的投票请求
      * @param request
      * @param self
      * @return
@@ -634,20 +637,22 @@ public class DLedgerLeaderElector {
                 return CompletableFuture.completedFuture(new VoteResponse(request).term(memberState.currTerm()).voteResult(VoteResponse.RESULT.REJECT_TERM_NOT_READY));
             }
 
-            // 判断请求节点的ledgerEndTerm与当前节点的ledgerEndTerm，这里主要是为了判断日志的复制进度
+            /**
+             * 判断请求节点的ledgerEndTerm与当前节点的ledgerEndTerm，这里主要是为了判断日志的复制进度
+             */
             // assert acceptedTerm is true
-            if (request.getLedgerEndTerm() < memberState.getLedgerEndTerm()) {
-                // 如果请求节点的ledgerEndTerm小于当前节点的ledgerEndTerm则拒绝，其原因是请求节点的日志复制进度比当前节点低，这种情况是不能成为主节点的
-                return CompletableFuture.completedFuture(new VoteResponse(request).term(memberState.currTerm()).voteResult(VoteResponse.RESULT.REJECT_EXPIRED_LEDGER_TERM));
-            } else if (request.getLedgerEndTerm() == memberState.getLedgerEndTerm() && request.getLedgerEndIndex() < memberState.getLedgerEndIndex()) {
-                // 如果ledgerEndTerm相等，但是ledgerEndIndex比当前节点小，则拒绝，原因同上
-                return CompletableFuture.completedFuture(new VoteResponse(request).term(memberState.currTerm()).voteResult(VoteResponse.RESULT.REJECT_SMALL_LEDGER_END_INDEX));
-            }
-
-            if (request.getTerm() < memberState.getLedgerEndTerm()) {
-                // 如果请求的Term小于ledgerEndTerm，则拒绝
-                return CompletableFuture.completedFuture(new VoteResponse(request).term(memberState.getLedgerEndTerm()).voteResult(VoteResponse.RESULT.REJECT_TERM_SMALL_THAN_LEDGER));
-            }
+//            if (request.getLedgerEndTerm() < memberState.getLedgerEndTerm()) {
+//                // 如果请求节点的ledgerEndTerm小于当前节点的ledgerEndTerm则拒绝，其原因是请求节点的日志复制进度比当前节点低，这种情况是不能成为主节点的
+//                return CompletableFuture.completedFuture(new VoteResponse(request).term(memberState.currTerm()).voteResult(VoteResponse.RESULT.REJECT_EXPIRED_LEDGER_TERM));
+//            } else if (request.getLedgerEndTerm() == memberState.getLedgerEndTerm() && request.getLedgerEndIndex() < memberState.getLedgerEndIndex()) {
+//                // 如果ledgerEndTerm相等，但是ledgerEndIndex比当前节点小，则拒绝，原因同上
+//                return CompletableFuture.completedFuture(new VoteResponse(request).term(memberState.currTerm()).voteResult(VoteResponse.RESULT.REJECT_SMALL_LEDGER_END_INDEX));
+//            }
+//
+//            if (request.getTerm() < memberState.getLedgerEndTerm()) {
+//                // 如果请求的Term小于ledgerEndTerm，则拒绝
+//                return CompletableFuture.completedFuture(new VoteResponse(request).term(memberState.getLedgerEndTerm()).voteResult(VoteResponse.RESULT.REJECT_TERM_SMALL_THAN_LEDGER));
+//            }
 
             memberState.setCurrVoteFor(request.getLeaderId());
             return CompletableFuture.completedFuture(new VoteResponse(request).term(memberState.currTerm()).voteResult(VoteResponse.RESULT.ACCEPT));

@@ -50,7 +50,11 @@ public class MemberState {
     private String leaderId;
     /** 当前投票轮次 */
     private long currTerm = -1;
-    /** 当前是谁发起的投票 */
+    /** 当前投票轮次中已经投票给某个节点，
+     * 为非空时标识本轮投票已经投过
+     *
+     * nextTerm()方法会清空该值
+     */
     private String currVoteFor;
     /** 当前日志的最大序列，即下一条日志的开始Index */
     private long ledgerEndIndex = -1;

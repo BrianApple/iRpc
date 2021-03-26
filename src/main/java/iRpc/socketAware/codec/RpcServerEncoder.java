@@ -23,17 +23,16 @@ public class RpcServerEncoder extends MessageToByteEncoder<SendData> {
 	protected void encode(ChannelHandlerContext ctx, SendData msg, ByteBuf out) throws Exception {
 		switch (MessageType.getMessageType(msg.getMsgType())){
 			case BASE_MSG:
+			case HEART_MSG:
+			case VOTE_MMSG:
 				try {
-					byte[] data = SerializationUtil.serialize((ResponseData)msg.getData());
+					byte[] data = SerializationUtil.serialize(msg.getData());
 					out.writeShort(data.length+1);
 					out.writeByte(msg.getMsgType());
 					out.writeBytes(data);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
-			case HEART_MSG:
-				break;
-			case VOTE_MMSG:
 				break;
 		}
 

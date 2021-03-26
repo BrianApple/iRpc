@@ -54,13 +54,13 @@ public class MessageSender implements IMessageSender {
                     }
                 }
             });
-            int index = timeout / 1000 + (timeout % 1000 == 0 ? 0 : 1 );
+            int index = timeout / 200 + (timeout % 200 == 0 ? 0 : 1 );
             while(CommonLocalCache.RetCache.getRet(sendData.getData().getRequestNum()) == null){
                 if (index-- <= 0  ){
                     break;
                 }
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(200);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -209,6 +209,7 @@ public class MessageSender implements IMessageSender {
             public void run(ResponseData ret) {
                 VoteResponse voteResponse = (VoteResponse)ret.getData();
                 if(ret.getReturnCode() == 200 && ret.getData() != null){
+
                     future.complete(voteResponse);
                 }else{
                     future.completeExceptionally(ret.getErroInfo());

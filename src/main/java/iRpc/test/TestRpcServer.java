@@ -75,7 +75,8 @@ public class TestRpcServer {
 //				classType,
 //				argsData,
 //				10000);
-//		System.out.println("客户端同步收到数据："+ret.getData());
+//
+//		System.out.println("客户端同步收到数据："+ret.getData()+" 执行时间："+ (System.currentTimeMillis()- Long.parseLong(ret.getResponseNum())));
 //		System.out.println("main方法执行结束");
 
 
