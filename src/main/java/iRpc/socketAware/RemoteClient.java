@@ -1,8 +1,10 @@
 package iRpc.socketAware;
 
+import com.alibaba.fastjson.JSON;
 import iRpc.base.IRpcContext;
 import iRpc.base.messageDeal.MessageReciever;
 import iRpc.base.messageDeal.MessageType;
+import iRpc.base.processor.IProcessor;
 import iRpc.cache.CommonLocalCache;
 import iRpc.dataBridge.RecieveData;
 import iRpc.dataBridge.vote.HeartBeatResponse;
@@ -36,79 +38,91 @@ public class RemoteClient {
 	private final EventLoopGroup eventLoopGroupWorker;
 	private Channel channel;
 
+	private Bootstrap singleBootstrap ;
+	private Object lock = new Object();
 	public RemoteClient() {
 		eventLoopGroupWorker = new NioEventLoopGroup(1, new ThreadFactoryImpl("netty_rpc_client_", false));
 	}
 
-	public void start(String ip, int port, String channelName) {
+	public boolean start(String ip, int port, String channelName) {
 		ClientHandler clientHandler = new ClientHandler();
-		Bootstrap handler = this.bootstrap.group(this.eventLoopGroupWorker).channel(NioSocketChannel.class)//
-				//
-				.option(ChannelOption.TCP_NODELAY, true)
-				//
-				.option(ChannelOption.SO_KEEPALIVE, false)
-				//
-				.option(ChannelOption.SO_SNDBUF, 65535)
-				//
-				.option(ChannelOption.SO_RCVBUF, 65535)
-				//
-				.handler(new ChannelInitializer<SocketChannel>() {
-					@Override
-					public void initChannel(SocketChannel ch) throws Exception {
-						ch.pipeline().addLast(
-							new IOTGateWacthDog(bootstrap, ip, port, CommonUtil.timer, true) {
+		//iRpc客户端不通过看门狗重连
+		boolean isTryAgain = channelName.startsWith(IRpcContext.DEFUAL_CHANNEL) ? false :true ;
+		if (singleBootstrap == null){
+			synchronized (lock){
+				if (singleBootstrap == null){
+					singleBootstrap = this.bootstrap.group(this.eventLoopGroupWorker).channel(NioSocketChannel.class)//
+							//
+							.option(ChannelOption.TCP_NODELAY, true)
+							//
+							.option(ChannelOption.SO_KEEPALIVE, false)
+							//
+							.option(ChannelOption.SO_SNDBUF, 65535)
+							//
+							.option(ChannelOption.SO_RCVBUF, 65535)
+							//
+							.handler(new ChannelInitializer<SocketChannel>() {
 								@Override
-								protected void channelRead0(ChannelHandlerContext ctx, Object msg) throws Exception {
-									ctx.fireChannelRead(msg);
-								}
+								public void initChannel(SocketChannel ch) throws Exception {
+									ch.pipeline().addLast(
+											new IOTGateWacthDog(bootstrap, ip, port, CommonUtil.timer, isTryAgain,channelName) {
+												@Override
+												protected void channelRead0(ChannelHandlerContext ctx, Object msg) throws Exception {
+													ctx.fireChannelRead(msg);
+												}
 
-								@Override
-								public ChannelHandler[] getChannelHandlers() {
-									return new ChannelHandler[]{
-											new RpcClientEncoder(), //
-											new RpcClientDecoder(),
-											clientHandler
-									};
+												@Override
+												public ChannelHandler[] getChannelHandlers() {
+													return new ChannelHandler[]{
+															new RpcClientEncoder(), //
+															new RpcClientDecoder(),
+															clientHandler
+													};
+												}
+											}.getChannelHandlers());
 								}
-							}.getChannelHandlers());
-					}
-				});
+							});
+				}
+			}
+		}
+
 
 		/**
 		 *
 		 */
-		logger.info("rpc client is connect to server {}:{}", ip, port);
-		if(IRpcContext.DEFUAL_CHANNEL.equals(channelName )){
+
+		if(channelName.startsWith(IRpcContext.DEFUAL_CHANNEL)){
 			//irpc客户端连接
-			 try {
-				handler.connect(ip, port).sync().addListener(new ChannelFutureListener() {
-					@Override
-					public void operationComplete(ChannelFuture channelFuture) throws Exception {
-						channel = channelFuture.channel();
-						CommonLocalCache.ChannelCache.putRet(channelName, channel);
-					}
-				});
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			ChannelFuture channelFuture = singleBootstrap.connect(ip, port).awaitUninterruptibly();
+			if(channelFuture.isSuccess()){
+				channel = channelFuture.channel();
+				channel.attr(IRpcContext.ATTRIBUTEKEY_IRPC_CLIENT).set("iRpcClient");
+//				channel.
+				CommonLocalCache.ClientChannelCache.putClientChannel(channelName, channel);
+				logger.info("rpc client is connect to server {}:{}", ip, port);
+				return true;
+			}else{
+				logger.info("rpc client is connect to server {}:{} failed ", ip, port);
+				return false;
 			}
 		}else{
-				while(true){
-					ChannelFuture channelFuture = handler.connect(ip, port).awaitUninterruptibly();
-					if(channelFuture.isSuccess()){
-						logger.info("cluster node {} connected success",String.format("%s:%s",ip,port));
-						channel = channelFuture.channel();
-						CommonLocalCache.ChannelCache.putRet(channelName, channel);
-						break;
-					}else {
-						logger.info("cluster node {} connected failed ,try again later.....",String.format("%s:%s",ip,port));
-					}
-					try {
-						Thread.sleep(2000);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
+			while(true){
+				ChannelFuture channelFuture = singleBootstrap.connect(ip, port).awaitUninterruptibly();
+				if(channelFuture.isSuccess()){
+					logger.info("cluster node {} connected success",String.format("%s:%s",ip,port));
+					channel = channelFuture.channel();
+					CommonLocalCache.ChannelCache.putRet(channelName, channel);
+					break;
+				}else {
+					logger.info("cluster node {} connected failed ,try again later.....",String.format("%s:%s",ip,port));
 				}
+				try {
+					Thread.sleep(2000);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+			return true;
 		}
 		
 		
@@ -144,31 +158,15 @@ public class RemoteClient {
 								public void run() {
 									String responseNum = responseData.getResponseNum();
 									//执行回调
-									CommonLocalCache.AsynTaskCache.getAsynTask(responseNum).run(responseData);
+									IProcessor iProcessor = CommonLocalCache.AsynTaskCache.getAsynTask(responseNum);
+									if (iProcessor != null){
+										iProcessor.run(responseData);
+									}else{
+										logger.error("该返回值未查询到回调方法：{}", JSON.toJSONString(responseData));
+									}
 								}
 							});
 							break;
-
-//							HeartBeatResponse heartBeatResponse = (HeartBeatResponse) recieveData.getData();
-//							MessageReciever.reciveMsg(new Runnable() {
-//								@Override
-//								public void run() {
-//									String responseNum = heartBeatResponse.getRequestNum();
-//									//执行回调
-//									CommonLocalCache.AsynTaskCache.getAsynTask(responseNum).run(heartBeatResponse);
-//								}
-//							});
-//
-//							VoteResponse voteResponse = (VoteResponse) recieveData.getData();
-//							MessageReciever.reciveMsg(new Runnable() {
-//								@Override
-//								public void run() {
-//									String responseNum = voteResponse.getRequestNum();
-//									//执行回调
-//									CommonLocalCache.AsynTaskCache.getAsynTask(responseNum).run(voteResponse);
-//								}
-//							});
-//							break;
 					}
 				}
 			}

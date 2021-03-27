@@ -27,6 +27,7 @@ public abstract class IOTGateWacthDog extends SimpleChannelInboundHandler<Object
 	private int port;
 	private HashedWheelTimer timer; //定时任务执行者
 	private boolean  flag; //是否执行重试机制
+	private String  channelName; //是否执行重试机制
 	/**
 	 * IOTGateWacthDog
 	 * @param bootstrap 引导
@@ -34,14 +35,16 @@ public abstract class IOTGateWacthDog extends SimpleChannelInboundHandler<Object
 	 * @param port master PORT
 	 * @param timer 定时器
 	 * @param flag 是否执行重试机制
+	 * @param channelName channel缓存的名称
 	 */
-	public IOTGateWacthDog(Bootstrap bootstrap, String ip, int port,HashedWheelTimer timer,boolean flag) {
+	public IOTGateWacthDog(Bootstrap bootstrap, String ip, int port,HashedWheelTimer timer,boolean flag,String channelName) {
 		super();
 		this.bootstrap = bootstrap;
 		this.ip = ip;
 		this.port = port;
 		this.timer = timer;
 		this.flag = flag;
+		this.channelName = channelName;
 	}
 
 
@@ -58,6 +61,9 @@ public abstract class IOTGateWacthDog extends SimpleChannelInboundHandler<Object
 	public void channelInactive(ChannelHandlerContext ctx) throws Exception {
 		if(flag){
 			timer.newTimeout(this, 800, TimeUnit.MILLISECONDS);
+		}else{
+			//客户端不会自动重连
+			CommonLocalCache.ClientChannelCache.removeChannel(channelName);
 		}
 		ctx.fireChannelInactive();
 	}
@@ -71,11 +77,7 @@ public abstract class IOTGateWacthDog extends SimpleChannelInboundHandler<Object
 					boolean isSuc = future.isSuccess();
 					if(isSuc){
 						future.channel().pipeline().fireChannelActive();
-						InetSocketAddress localSocket = (InetSocketAddress)future.channel().localAddress();
-						CommonLocalCache.ChannelCache.putRet(String.format("%s:%s",ip,port),future.channel());
-//						ByteBuf buf = MixAll.GateLogin.loginGateHeader(StringUtils.formatIpAddress(localSocket.getHostName(),
-//								String.valueOf(localSocket.getPort())));
-//						future.channel().writeAndFlush(buf);
+						CommonLocalCache.ChannelCache.putRet(channelName,future.channel());
 					}else{
 						future.channel().pipeline().fireChannelInactive();
 					}

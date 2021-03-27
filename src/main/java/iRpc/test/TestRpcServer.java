@@ -1,5 +1,6 @@
 package iRpc.test;
 
+import com.alibaba.fastjson.JSON;
 import iRpc.base.IRpcContext;
 import iRpc.base.messageDeal.MessageSender;
 import iRpc.base.processor.IProcessor;
@@ -41,12 +42,12 @@ public class TestRpcServer {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		ClientStarter clientStarter = new ClientStarter();
-		try {
-			Thread.sleep(5000);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
+//		ClientStarter clientStarter = new ClientStarter();
+//		try {
+//			Thread.sleep(5000);
+//		} catch (InterruptedException e) {
+//			e.printStackTrace();
+//		}
 
 		/**
 		 * 同步消息发送
@@ -91,8 +92,25 @@ public class TestRpcServer {
 //		CompletableFuture<VoteResponse> voteResponse;
 //		voteResponse = MessageSender.vote(voteRequest, IRpcContext.DEFUAL_CHANNEL);
 
+//		for (;;){
+//			try {
+//				Thread.sleep(5000);
+//			} catch (InterruptedException e) {
+//				e.printStackTrace();
+//			}
+//			getClusterInfo();
+//		}
 
 
+	}
 
+
+	public static void getClusterInfo(){
+		ResponseData ret = MessageSender.synBaseMsgSend(false,
+						"iRpc.vote.service.ClusterInfoService",
+				"getClusterInfo",
+				5000);
+
+		System.out.println("客户端同步获取集群信息："+ JSON.toJSONString(ret.getData())+" 执行时间："+ (System.currentTimeMillis()- Long.parseLong(ret.getResponseNum())));
 	}
 }

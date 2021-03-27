@@ -205,33 +205,51 @@ public class RemoteServer {
             try {
                 clazz = Class.forName(request.getClassName());
             } catch (ClassNotFoundException e) {
-                throw  new IRPCServerNotFound("server not found（ClassNotFoundException）!");
+                throw  new IRPCServerNotFound("server not found（ClassNotFoundException）!",e);
             }
             Object data = null;
             Object[] args = request.getArgs();
-            int argsLen = args.length;
-            Class<?>[] clazzs = new Class[argsLen];
-            if(request.getArgs()!= null && request.getArgs().length > 0 &&  ( request.getParamTyps() == null || request.getParamTyps().length < request.getArgs().length)){
-                for (int i = 0 ; i < argsLen; i ++ ) {
-                    clazzs[i] = args[i].getClass();
-                }
-            }else{
-                clazzs = request.getParamTyps();
-            }
-            Method method = null;
-            try {
-                method = clazz.getMethod(request.getMethodName(), clazzs);
-            } catch (NoSuchMethodException e) {
-                throw  new IRPCServerNotFound("server not found（NoSuchMethodException）!");
-            }
-            if(clazz.isAnnotationPresent(iRpc.service.IRPCService.class) || method.isAnnotationPresent(iRpc.service.IRPCService.class) ){
+            if (args == null || args.length == 0 ){
+                Method method = null;
                 try {
-                    data = method.invoke(clazz.newInstance(), request.getArgs());
-                } catch (Exception e) {
+                    method = clazz.getMethod(request.getMethodName());
+                } catch (NoSuchMethodException e) {
+                    throw  new IRPCServerNotFound("server not found（NoSuchMethodException）!",e);
+                }
+                if(clazz.isAnnotationPresent(iRpc.service.IRPCService.class) || method.isAnnotationPresent(iRpc.service.IRPCService.class) ){
+                    try {
+                        data = method.invoke(clazz.newInstance());
+                    } catch (Exception e) {
+                        throw  new IRPCServerNotFound("server not found!",e);
+                    }
+                }else{
                     throw  new IRPCServerNotFound("server not found!");
                 }
             }else{
-                throw  new IRPCServerNotFound("server not found!");
+                int argsLen = args.length;
+                Class<?>[] clazzs = new Class[argsLen];
+                if(request.getArgs()!= null && request.getArgs().length > 0 &&  ( request.getParamTyps() == null || request.getParamTyps().length < request.getArgs().length)){
+                    for (int i = 0 ; i < argsLen; i ++ ) {
+                        clazzs[i] = args[i].getClass();
+                    }
+                }else{
+                    clazzs = request.getParamTyps();
+                }
+                Method method = null;
+                try {
+                    method = clazz.getMethod(request.getMethodName(), clazzs);
+                } catch (NoSuchMethodException e) {
+                    throw  new IRPCServerNotFound("server not found（NoSuchMethodException）!",e);
+                }
+                if(clazz.isAnnotationPresent(iRpc.service.IRPCService.class) || method.isAnnotationPresent(iRpc.service.IRPCService.class) ){
+                    try {
+                        data = method.invoke(clazz.newInstance(), request.getArgs());
+                    } catch (Exception e) {
+                        throw  new IRPCServerNotFound("server not found!",e);
+                    }
+                }else{
+                    throw  new IRPCServerNotFound("server not found!");
+                }
             }
             //请求响应代码一一对应
 //            responseData.setResponseNum(request.getRequestNum());

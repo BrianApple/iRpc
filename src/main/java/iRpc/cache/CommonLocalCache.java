@@ -95,6 +95,34 @@ public class CommonLocalCache {
 
 
 	}
+
+	/**
+	 * client channel cache
+	 * <p>Description: </p>
+	 * <p>Copyright: Copyright (c) 2019</p>
+	 * <p>Company: www.uiotp.com</p>
+	 * @author yangcheng
+	 * @date 2021年2月27日
+	 * @version 1.0
+	 */
+	public static class ClientChannelCache {
+		private static Cache<String, Channel> retCache;
+		static{
+			retCache = CommonLocalCache.newCaffeineCacheNoExpireTime();
+		}
+
+		public static void putClientChannel(String key,Channel value){
+			retCache.put(key, value);
+		}
+		public static Channel getChannel(String key){
+			return retCache.getIfPresent(key);
+		}
+		public static void removeChannel(String key){
+			retCache.invalidate(key);
+		}
+
+	}
+
 	/**
 	 * 
 	 * <p>Description: </p>

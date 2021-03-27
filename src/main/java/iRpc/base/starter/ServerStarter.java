@@ -43,8 +43,10 @@ public class ServerStarter implements Istarter{
      */
     public boolean initLeaderElector(DLedgerConfig dLedgerConfig){
         if(CommonLocalCache.BasicInfoCache.getProperty("elector") == null){
-            DLedgerLeaderElector elector = new DLedgerLeaderElector(dLedgerConfig,new MemberState(dLedgerConfig));
+            MemberState memberState = new MemberState(dLedgerConfig);
+            DLedgerLeaderElector elector = new DLedgerLeaderElector(dLedgerConfig,memberState);
             CommonLocalCache.BasicInfoCache.putProperty("elector",elector);
+            CommonLocalCache.BasicInfoCache.putProperty("memberState",memberState);
             elector.startup();
         }
         return true;
@@ -52,6 +54,9 @@ public class ServerStarter implements Istarter{
 
     @Override
     public boolean start() {
+        if(!IRpcContext.serverStarted.compareAndSet(false,true)){
+                return false;
+        }
         //获取配置信息
         Map<String,Object> map =  YamlUtil.getTypePropertieMap(pathName);
         Map<String,Object> serverMap = (Map<String, Object>) map.get("server");
@@ -73,7 +78,7 @@ public class ServerStarter implements Istarter{
                         e.printStackTrace();
                     }
                 }
-            },String.format("server:%s",serverPort)).start();
+            },String.format("iRpc_server:%s",serverPort)).start();
             /**
              * 集群相关节点--涉及节点选举等操作
              */

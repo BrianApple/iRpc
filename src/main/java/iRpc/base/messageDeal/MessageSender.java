@@ -15,6 +15,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -54,13 +55,13 @@ public class MessageSender implements IMessageSender {
                     }
                 }
             });
-            int index = timeout / 200 + (timeout % 200 == 0 ? 0 : 1 );
+            int index = timeout / 100 + (timeout % 100 == 0 ? 0 : 1 );
             while(CommonLocalCache.RetCache.getRet(sendData.getData().getRequestNum()) == null){
                 if (index-- <= 0  ){
                     break;
                 }
                 try {
-                    Thread.sleep(200);
+                    Thread.sleep(100);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -94,7 +95,9 @@ public class MessageSender implements IMessageSender {
      * @return
      */
     private  static ResponseData synMessageSend2Server(int msgType, IDataSend data, int timeout,String channelName){
-        Channel channel = CommonLocalCache.ChannelCache.getChannel(channelName);
+        Channel channel =
+                channelName.startsWith(IRpcContext.DEFUAL_CHANNEL) ?
+                        CommonLocalCache.ClientChannelCache.getChannel(channelName) :CommonLocalCache.ChannelCache.getChannel(channelName);
         if (channel == null){
             return new ResponseData(data.getRequestNum(),500);
         }
@@ -109,7 +112,9 @@ public class MessageSender implements IMessageSender {
      * @return
      */
     private static boolean asynMessaSend2Server(int msgType,IDataSend data,IProcessor task,String channelName){
-        Channel channel = CommonLocalCache.ChannelCache.getChannel(channelName);
+        Channel channel =
+                channelName.startsWith(IRpcContext.DEFUAL_CHANNEL) ?
+                        CommonLocalCache.ClientChannelCache.getChannel(channelName) :CommonLocalCache.ChannelCache.getChannel(channelName);
         if (channel == null){
             return false;
         }
@@ -135,7 +140,49 @@ public class MessageSender implements IMessageSender {
         requestData.setMethodName(methodName);
         requestData.setParamTyps(argsType);
         requestData.setArgs(args);
-        return synMessageSend2Server( 1,  requestData,  timeout,IRpcContext.DEFUAL_CHANNEL);
+        return synMessageSend2Server( 1,  requestData,  timeout,IRpcContext.LeaderNode);
+    }
+
+    /**
+     * 同步发送消息，消息类型为1
+     * @param isBroadcast
+     * @param className
+     * @param methodName
+     * @param timeout
+     * @return
+     */
+    public static ResponseData synBaseMsgSend(boolean isBroadcast,String className,String methodName, int timeout){
+        RequestData requestData = new RequestData();
+        requestData.setBroadcast(isBroadcast);
+        requestData.setRequestNum(String.valueOf(CommonUtil.getSeq()));
+        requestData.setClassName(className);//获取方法所在类名称
+        requestData.setMethodName(methodName);
+        return synMessageSend2Server( 1,  requestData,  timeout,IRpcContext.LeaderNode);
+    }
+    /**
+     * 同步发送消息，消息类型为1
+     * @param remoteChannelkey 远程服务节点集合
+     * @param isBroadcast
+     * @param className
+     * @param methodName
+     * @param timeout
+     * @return
+     */
+    public static ResponseData synBaseMsgSend(List<String> remoteChannelkey, boolean isBroadcast, String className, String methodName, int timeout){
+        RequestData requestData = new RequestData();
+        requestData.setBroadcast(isBroadcast);
+        requestData.setRequestNum(String.valueOf(CommonUtil.getSeq()));
+        requestData.setClassName(className);//获取方法所在类名称
+        requestData.setMethodName(methodName);
+        ResponseData responseData = null;
+        for (String channelKey: remoteChannelkey
+             ) {
+            responseData = synMessageSend2Server( 1,  requestData,  timeout,channelKey);
+            if (responseData.getReturnCode() == 200){
+                break;
+            }
+        }
+        return responseData;
     }
 
     /**
@@ -154,7 +201,7 @@ public class MessageSender implements IMessageSender {
         requestData.setClassName(className);//获取方法所在类名称
         requestData.setMethodName(methodName);
         requestData.setArgs(args);
-        return synMessageSend2Server( 1,  requestData,  timeout,IRpcContext.DEFUAL_CHANNEL);
+        return synMessageSend2Server( 1,  requestData,  timeout,IRpcContext.LeaderNode);
     }
 
     /**
@@ -175,7 +222,7 @@ public class MessageSender implements IMessageSender {
         requestData.setMethodName(methodName);
         requestData.setParamTyps(argsType);
         requestData.setArgs(args);
-        return asynMessaSend2Server(1, requestData, task,IRpcContext.DEFUAL_CHANNEL);
+        return asynMessaSend2Server(1, requestData, task,IRpcContext.LeaderNode);
     }
     /**
      * 异步发送消息(type=1)
@@ -193,7 +240,7 @@ public class MessageSender implements IMessageSender {
         requestData.setClassName(className);//获取方法所在类名称
         requestData.setMethodName(methodName);
         requestData.setArgs(args);
-        return asynMessaSend2Server(1, requestData, task,IRpcContext.DEFUAL_CHANNEL);
+        return asynMessaSend2Server(1, requestData, task,IRpcContext.LeaderNode);
     }
 
     /**

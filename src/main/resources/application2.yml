@@ -2,11 +2,15 @@
 #rpc客户端配置信息
 #rpc客户端配置信息client:
 client:
+  retryTimes: 3
+  serverModCluster: true
   serverNode:
     - ip: 127.0.0.1 # 第一个节点是主节点即master节点
       port: 10917
     - ip: 127.0.0.1
       port: 10916
+    - ip: 127.0.0.1
+      port: 10918
 server:
   serverPort: 10917
   heartbeat: 60 # min
