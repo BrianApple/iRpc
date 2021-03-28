@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.uiotp</groupId>
   <artifactId>iRpc</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <version>1.0.0-alpha</version>
   <name>iRpc</name>
   <description>iRpc为一款基于netty实现的轻量级高性能rpc框架</description>
   <dependencies>

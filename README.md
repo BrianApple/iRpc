@@ -1,7 +1,7 @@
 # iRpc
 
 #### 介绍
-iRpc为一款基于netty实现的轻量级高性能rpc框架
+iRpc为一款基于netty实现的轻量级高性能rpc框架,支持单机及leader-follower部署模式,配置简单，通信效率高，优先适用于物联网应用场景。
 
 #### 软件架构
 软件架构说明
@@ -26,6 +26,13 @@ iRpc为一款基于netty实现的轻量级高性能rpc框架
 
 #### 启动流程
 ![流程](https://images.gitee.com/uploads/images/2021/0328/113300_2ae87b28_1038477.png "流程.png")
+
+
+#### 感谢
+Netty 项目及作者，项目地址： https://github.com/netty/netty
+
+dledger 项目及作者，项目地址： https://github.com/openmessaging/openmessaging-storage-dledger
+
 
 #### 参与贡献
 
