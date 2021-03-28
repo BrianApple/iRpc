@@ -24,6 +24,9 @@ iRpc为一款基于netty实现的轻量级高性能rpc框架
     server.heartbeat:iRpc服务端检测iRpc客户端连接状态的最大心跳周期。
     server.ClusterNode:iRpc服务节点集群，可以不指定，基于raft算法选举master节点
 
+#### 启动流程
+![流程](https://images.gitee.com/uploads/images/2021/0328/113300_2ae87b28_1038477.png "流程.png")
+
 #### 参与贡献
 
 1.  Fork 本仓库
