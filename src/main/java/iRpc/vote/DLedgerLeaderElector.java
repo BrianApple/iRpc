@@ -243,9 +243,10 @@ public class DLedgerLeaderElector {
             future.whenComplete((VoteResponse x, Throwable ex) -> {
                 try {
                     if (ex != null) {
-                        throw ex;
+                        logger.error("vote failed ",ex);
+                        return;
                     }
-                    logger.info("[{}][投票回调执行] {}", memberState.getSelfId(), JSON.toJSONString(x));
+                    logger.debug("[{}][投票回调执行] {}", memberState.getSelfId(), JSON.toJSONString(x));
                     if (x.getVoteResult() != VoteResponse.RESULT.UNKNOWN) {
                         /**如果投票结果不是UNKNOW，则有效投票数量增1**/
                         validNum.incrementAndGet();
@@ -343,12 +344,12 @@ public class DLedgerLeaderElector {
             nextTimeToRequestVote = getNextTimeToRequestVote();
         }
         lastParseResult = parseResult;
-        logger.info("[{}] [投票综合结果] cost={} term={} memberNum={} allNum={} acceptedNum={} notReadyTermNum={} biggerLedgerNum={} alreadyHasLeader={} maxTerm={} result={}",
+        logger.debug("[{}] [投票综合结果] cost={} term={} memberNum={} allNum={} acceptedNum={} notReadyTermNum={} biggerLedgerNum={} alreadyHasLeader={} maxTerm={} result={}",
                 memberState.getSelfId(), lastVoteCost, term, memberState.peerSize(), allNum, acceptedNum, notReadyTermNum, biggerLedgerNum, alreadyHasLeader, knownMaxTermInGroup.get(), parseResult);
 
         if (parseResult == VoteResponse.ParseResult.PASSED) {
             // 如果投票成功，则状态机状态设置为Leader
-            logger.info("[{}] [投票最终结果] has been elected to be the leader in term {}", memberState.getSelfId(), term);
+            logger.debug("[{}] [投票最终结果] has been elected to be the leader in term {}", memberState.getSelfId(), term);
             changeRoleToLeader(term);
         }
 
@@ -465,7 +466,7 @@ public class DLedgerLeaderElector {
             // 如果成功的票数大于进群内的半数，则表示集群状态正常，正常按照心跳包间隔发送心跳包
             lastSuccHeartBeatTime = System.currentTimeMillis();
         } else {
-            logger.info("[{}] Parse heartbeat responses in cost={} term={} allNum={} succNum={} notReadyNum={} inconsistLeader={} maxTerm={} peerSize={} lastSuccHeartBeatTime={}",
+            logger.debug("[{}] Parse heartbeat responses in cost={} term={} allNum={} succNum={} notReadyNum={} inconsistLeader={} maxTerm={} peerSize={} lastSuccHeartBeatTime={}",
                     memberState.getSelfId(), DLedgerUtils.elapsed(startHeartbeatTimeMs), term, allNum.get(), succNum.get(), notReadyNum.get(), inconsistLeader.get(), maxTerm.get(), memberState.peerSize(), new Timestamp(lastSuccHeartBeatTime));
             if (memberState.isQuorum(succNum.get() + notReadyNum.get())) {
                 // 如果成功的票数加上未准备的投票的节点数量超过集群内的半数，则立即发送心跳包
@@ -578,7 +579,7 @@ public class DLedgerLeaderElector {
             voteRequest.setLeaderId(memberState.getSelfId());
             voteRequest.setTerm(term);//发起投票的节点当前的投票轮次
             voteRequest.setRemoteId(id);
-            CompletableFuture<VoteResponse> voteResponse;
+            CompletableFuture<VoteResponse> voteResponse = null;
             if (memberState.getSelfId().equals(id)) {
                 /**
                  * 自己投自己一票
@@ -587,7 +588,9 @@ public class DLedgerLeaderElector {
             } else {
                 voteResponse = MessageSender.vote(voteRequest, memberState.getPeerMap().get(id));
             }
-            responses.add(voteResponse);
+            if (voteResponse != null){
+                responses.add(voteResponse);
+            }
 
         }
         return responses;

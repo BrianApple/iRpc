@@ -8,9 +8,12 @@ import iRpc.dataBridge.vote.ClusterInfo;
 import iRpc.socketAware.RemoteClient;
 import iRpc.util.CommonUtil;
 import iRpc.util.YamlUtil;
+import iRpc.vote.DLedgerLeaderElector;
 import io.netty.channel.Channel;
 import io.netty.util.Timeout;
 import io.netty.util.TimerTask;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -100,12 +103,14 @@ public class ClientStarter implements Istarter{
 
 }
 class ClusterInfoInterval implements  TimerTask{
+    private static Logger logger = LoggerFactory.getLogger(ClusterInfoInterval.class);
     private List<String> clientChannelKeys;
 
     @Override
     public void run(Timeout timeout) throws Exception {
+        CommonUtil.timer.newTimeout(this,2,TimeUnit.SECONDS);
         getClusterInfo();
-        CommonUtil.timer.newTimeout(this,1,TimeUnit.SECONDS);
+
     }
 
     /**
@@ -123,7 +128,7 @@ class ClusterInfoInterval implements  TimerTask{
             Set<String> keys=  IRpcContext.ClusterPeersInfo.keySet();
             for (String key: keys
                  ) {
-                clientChannelKeys.add(key);
+                clientChannelKeys.add(IRpcContext.DEFUAL_CHANNEL+IRpcContext.ClusterPeersInfo.get(key));
             }
         }
         ResponseData responseData = MessageSender.synBaseMsgSend(clientChannelKeys,
@@ -136,6 +141,7 @@ class ClusterInfoInterval implements  TimerTask{
             return;
         }
         IRpcContext.LeaderNode = IRpcContext.DEFUAL_CHANNEL+clusterInfo.getPeers().get(clusterInfo.getLeaderId());
+        logger.debug("leaderNode：{}",IRpcContext.DEFUAL_CHANNEL+clusterInfo.getPeers().get(clusterInfo.getLeaderId()));
         IRpcContext.ClusterPeersInfo = clusterInfo.getPeers();
 
         Set<Map.Entry<String, String>> set = clusterInfo.getPeers().entrySet();

@@ -102,7 +102,7 @@ public class RemoteClient {
 				logger.info("rpc client is connect to server {}:{}", ip, port);
 				return true;
 			}else{
-				logger.info("rpc client is connect to server {}:{} failed ", ip, port);
+				logger.error("rpc client is connect to server {}:{} failed ", ip, port);
 				return false;
 			}
 		}else{
@@ -114,7 +114,7 @@ public class RemoteClient {
 					CommonLocalCache.ChannelCache.putRet(channelName, channel);
 					break;
 				}else {
-					logger.info("cluster node {} connected failed ,try again later.....",String.format("%s:%s",ip,port));
+					logger.error("cluster node {} connected failed ,try again later.....",String.format("%s:%s",ip,port));
 				}
 				try {
 					Thread.sleep(2000);

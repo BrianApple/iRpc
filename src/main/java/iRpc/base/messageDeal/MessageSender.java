@@ -74,10 +74,13 @@ public class MessageSender implements IMessageSender {
     /**
      * 异步发送数据
      * @param msg
-     * @return
+     * @return 发送是否成功
      */
     private static  boolean asynMessageSend(SendData<IDataSend> msg, IProcessor task) {
         Channel  channel= ((SendData<IDataSend>) msg).getChannel();
+        if (channel == null){
+            return false;
+        }
         channel.writeAndFlush(msg).addListener(new ChannelFutureListener() {
 
             @Override
@@ -130,7 +133,7 @@ public class MessageSender implements IMessageSender {
      * @param argsType
      * @param args
      * @param timeout
-     * @return
+     * @return returncode != 200 发送失败
      */
     public static ResponseData synBaseMsgSend(boolean isBroadcast,String className,String methodName,Class<?>[] argsType,Object[] args, int timeout){
         RequestData requestData = new RequestData();
@@ -149,7 +152,7 @@ public class MessageSender implements IMessageSender {
      * @param className
      * @param methodName
      * @param timeout
-     * @return
+     * @return returncode != 200 发送失败
      */
     public static ResponseData synBaseMsgSend(boolean isBroadcast,String className,String methodName, int timeout){
         RequestData requestData = new RequestData();
@@ -160,13 +163,13 @@ public class MessageSender implements IMessageSender {
         return synMessageSend2Server( 1,  requestData,  timeout,IRpcContext.LeaderNode);
     }
     /**
-     * 同步发送消息，消息类型为1
-     * @param remoteChannelkey 远程服务节点集合
+     * 同步发送消息，消息类型为1--内部使用
+     * @param remoteChannelkey iRpc server节点集合
      * @param isBroadcast
      * @param className
      * @param methodName
      * @param timeout
-     * @return
+     * @return returncode != 200 发送失败
      */
     public static ResponseData synBaseMsgSend(List<String> remoteChannelkey, boolean isBroadcast, String className, String methodName, int timeout){
         RequestData requestData = new RequestData();
@@ -192,7 +195,7 @@ public class MessageSender implements IMessageSender {
      * @param methodName
      * @param args
      * @param timeout
-     * @return
+     * @return returncode != 200 发送失败
      */
     public static ResponseData synBaseMsgSend(boolean isBroadcast,String className,String methodName,Object[] args, int timeout){
         RequestData requestData = new RequestData();
@@ -212,7 +215,7 @@ public class MessageSender implements IMessageSender {
      * @param argsType
      * @param args
      * @param task
-     * @return
+     * @return 发送成功或失败
      */
     public static boolean asynBaseMsgSend(boolean isBroadcast,String className,String methodName,Class<?>[] argsType,Object[] args,IProcessor task){
         RequestData requestData = new RequestData();
@@ -231,7 +234,7 @@ public class MessageSender implements IMessageSender {
      * @param methodName
      * @param args
      * @param task
-     * @return
+     * @return 发送成功或失败
      */
     public static boolean asynBaseMsgSend(boolean isBroadcast,String className,String methodName,Object[] args,IProcessor task){
         RequestData requestData = new RequestData();
