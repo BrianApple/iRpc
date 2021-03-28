@@ -24,7 +24,7 @@ iRpc为一款基于netty实现的轻量级高性能rpc框架,支持单机及lead
 #### 配置信息详解
 
 ```
-#rpc客户端配置信息
+#iRpc客户端配置信息
 client:
   retryTimes: 3
   serverModCluster: true
@@ -39,7 +39,7 @@ client:
 
 
 ```
-## rpc服务端配置信息
+## iRpc服务端配置信息
 server:
   serverPort: 10916
   heartbeat: 60 # iRpc服务端检测iRpc客户端连接状态的最大心跳周期。
