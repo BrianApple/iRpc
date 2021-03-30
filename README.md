@@ -60,6 +60,18 @@ server:
 #### 启动流程
 ![流程](https://images.gitee.com/uploads/images/2021/0328/113300_2ae87b28_1038477.png "流程.png")
 
+#### 如何引入
+![maven](https://images.gitee.com/uploads/images/2021/0330/212958_4046ad06_1038477.png "maven.png")
+
+
+```
+<dependency>
+  <groupId>io.github.brianapple</groupId>
+  <artifactId>iRpc</artifactId>
+  <version>1.0.1-Release</version>
+</dependency>
+```
+
 
 #### 感谢
 Netty 项目及作者，项目地址： https://github.com/netty/netty
