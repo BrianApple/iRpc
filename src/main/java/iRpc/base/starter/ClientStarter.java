@@ -48,7 +48,7 @@ public class ClientStarter implements Istarter{
         }
         //获取配置信息
         IRpcContext.yumInfo =  YamlUtil.getTypePropertieMap(pathName);
-        Map<String,Object> clientMap = (Map<String, Object>) IRpcContext.yumInfo.get("client");
+        Map<String,Object> clientMap = (Map<String, Object>) IRpcContext.yumInfo.get("iRpcClient");
         if(clientMap != null ){
             boolean isCluster = clientMap.get("serverModCluster") == null ?
                                         false :  Boolean.valueOf(String.valueOf(clientMap.get("serverModCluster"))) ;

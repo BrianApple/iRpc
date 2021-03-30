@@ -59,7 +59,7 @@ public class ServerStarter implements Istarter{
         }
         //获取配置信息
         Map<String,Object> map =  YamlUtil.getTypePropertieMap(pathName);
-        Map<String,Object> serverMap = (Map<String, Object>) map.get("server");
+        Map<String,Object> serverMap = (Map<String, Object>) map.get("iRpcServer");
         if(serverMap != null ){
             String serverPort  = String.valueOf( serverMap.get("serverPort"));
             String heartbeat= String.valueOf(serverMap.get("heartbeat"));

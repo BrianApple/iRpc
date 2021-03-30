@@ -2,9 +2,37 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.github.brianapple</groupId>
   <artifactId>iRpc</artifactId>
-  <version>1.0.0-alpha</version>
+  <version>1.0.1-Release</version>
   <name>iRpc</name>
   <description>iRpc为一款基于netty实现的轻量级高性能rpc框架</description>
+	<parent>
+		<groupId>org.sonatype.oss</groupId>
+		<artifactId>oss-parent</artifactId>
+		<version>7</version>
+	</parent>
+  <licenses>
+		<license>
+			<name>Apache-2.0</name>
+			<url>http://www.apache.org/licenses/LICENSE-2.0</url>
+		</license>
+  </licenses>
+  <scm>
+		<connection>https://github.com/BrianApple/iRpc.git</connection>
+		<url>https://github.com/BrianApple/iRpc</url>
+  </scm>
+  <developers>
+	  <developer>
+			<name>yangcheng</name>
+			<email>ycheng155@gmail.com</email>
+			<roles>
+				<role>Owner</role>
+			</roles>
+			<timezone>+8</timezone>
+	  </developer>
+  </developers>
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	</properties>
   <dependencies>
   	<dependency>
 	    <groupId>io.netty</groupId>
@@ -90,36 +118,76 @@
 			      <target>1.8</target>
 			  </configuration>
 			</plugin>
-
-			<!-- 打包jar文件时，配置manifest文件，加入lib包的jar依赖 -->
 			<plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <configuration>
-                    <appendAssemblyId>false</appendAssemblyId>
-                    <descriptorRefs>
-                        <descriptorRef>jar-with-dependencies</descriptorRef>
-                    </descriptorRefs>
-                    <archive>
-                        <manifest>
-                            <mainClass>iRpc.test.TestRpcServer</mainClass>
-                        </manifest>
-                    </archive>
-               	  </configuration>
-                <executions>
-                    <execution>
-                        <id>make-assembly</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>assembly</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>2.10.4</version>
+				<configuration>
+					<encoding>UTF-8</encoding>
+					<aggregate>true</aggregate>
+					<charset>UTF-8</charset>
+					<docencoding>UTF-8</docencoding>
+				</configuration>
+				<executions>
+					<execution>
+						<id>attach-javadocs</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<!--配置生成源码包-->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+				<version>3.1.0</version>
+				<executions>
+					<execution>
+						<id>attach-sources</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-gpg-plugin</artifactId>
+				<version>1.1</version>
+				<executions>
+					<execution>
+						<id>sign-artifacts</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>sign</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
 			<plugin>
 			  <groupId>org.apache.maven.plugins</groupId>
 			  <artifactId>maven-javadoc-plugin</artifactId>
 			  <version>3.0.0</version>
+				<configuration>
+					<!-- jdk1.8要加上，1.7要去掉，否则会报错 -->
+					<additionalJOptions>
+						<additionalJOption>-Xdoclint:none</additionalJOption>
+					</additionalJOptions>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>
+	<distributionManagement>
+		<snapshotRepository>
+			<id>yuzhi_snapshots</id>
+			<name>snapshots</name>
+			<url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
+		</snapshotRepository>
+		<repository>
+			<id>yuzhi_releases</id>
+			<name>releases</name>
+			<url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+		</repository>
+	</distributionManagement>
 </project>

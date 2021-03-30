@@ -1,5 +1,5 @@
 #rpc客户端配置信息
-client:
+iRpcClient:
   retryTimes: 3
   serverModCluster: true
   serverNode:
@@ -10,7 +10,7 @@ client:
     - ip: 127.0.0.1
       port: 10918
 ## rpc服务端配置信息
-server:
+iRpcServer:
   serverPort: 10916
   heartbeat: 60 # min
   ClusterNode: #如果使用单机，则不配置该项,node从n1开始，n0属于localhost
