@@ -21,9 +21,7 @@ import com.beust.jcommander.Parameter;
 import java.io.File;
 
 /**
- * DLedger 的配置信息----配置文件包含ClusterNode信息时创建本实例
- * All rights Reserved, Designed By www.uiotcp.com
- * @Description:    描述   
+ * @Description:    描述
  * @author: https://github.com/openmessaging/openmessaging-storage-dledger
  * @date:   2020年6月29日  
  * @version V1.0

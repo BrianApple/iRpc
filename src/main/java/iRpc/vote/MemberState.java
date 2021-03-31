@@ -76,45 +76,6 @@ public class MemberState {
 //        loadTerm();
     }
 
-    /**
-     * 从/tmp/dledgerstore/dledger-n0/currterm中读取之前持久化的currTerm和currVoteFor
-     */
-//    private void loadTerm() {
-//        try {
-//            String data = IOUtils.file2String(dLedgerConfig.getDefaultPath() + File.separator + TERM_PERSIST_FILE);
-//            Properties properties = IOUtils.string2Properties(data);
-//            if (properties == null) {
-//                return;
-//            }
-//            if (properties.containsKey(TERM_PERSIST_KEY_TERM)) {
-//                currTerm = Long.parseLong(String.valueOf(properties.get(TERM_PERSIST_KEY_TERM)));
-//            }
-//            if (properties.containsKey(TERM_PERSIST_KEY_VOTE_FOR)) {
-//                currVoteFor = String.valueOf(properties.get(TERM_PERSIST_KEY_VOTE_FOR));
-//                if (currVoteFor.length() == 0) {
-//                    currVoteFor = null;
-//                }
-//            }
-//        } catch (Throwable t) {
-//            logger.error("Load last term failed", t);
-//        }
-//    }
-
-    /**
-     * 持久化的currTerm和currVoteFor到/tmp/dledgerstore/dledger-n0/currterm
-     */
-//    private void persistTerm() {
-//        try {
-//            Properties properties = new Properties();
-//            properties.put(TERM_PERSIST_KEY_TERM, currTerm);
-//            properties.put(TERM_PERSIST_KEY_VOTE_FOR, currVoteFor == null ? "" : currVoteFor);
-//            String data = IOUtils.properties2String(properties);
-//            IOUtils.string2File(data, dLedgerConfig.getDefaultPath() + File.separator + TERM_PERSIST_FILE);
-//        } catch (Throwable t) {
-//            logger.error("Persist curr term failed", t);
-//        }
-//    }
-
     public long currTerm() {
         return currTerm;
     }

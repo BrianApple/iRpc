@@ -48,9 +48,6 @@ import static iRpc.dataBridge.vote.VoteResponse.ParseResult.WAIT_TO_VOTE_NEXT;
 public class DLedgerLeaderElector {
 
     private static Logger logger = LoggerFactory.getLogger(DLedgerLeaderElector.class);
-    /**
-     * 随机数生成器，对应raft协议中选举超时时间是一随机数
-     */
     private Random random = new Random();
     private DLedgerConfig dLedgerConfig;//配置参数
     private final MemberState memberState;//节点状态机
@@ -129,15 +126,6 @@ public class DLedgerLeaderElector {
         this.maxVoteIntervalMs = dLedgerConfig.getMaxVoteIntervalMs();
     }
 
-    /**
-     * The core method of maintainer.
-     * 根据当前角色运行指定的逻辑:
-     *  candidate => propose a vote.
-     *  leader => send heartbeats to followers, and step down to candidate when quorum followers do not respond.
-     *  follower => accept heartbeats, and change to candidate when no heartbeat from leader.
-     *
-     *  该方法会循环执行
-     */
     private void maintainState() throws Exception {
         if (memberState.isLeader()) {
             maintainAsLeader();
@@ -165,7 +153,6 @@ public class DLedgerLeaderElector {
                 // 重置心跳包发送计时器
                 lastSendHeartBeatTime = System.currentTimeMillis();
             }
-            // master节点向集群内的所有节点发送心跳包
             sendHeartbeats(term, leaderId);
         }
     }
@@ -189,9 +176,9 @@ public class DLedgerLeaderElector {
         }
         // 投票轮次
         long term;
-        // Leader节点当前的投票轮次
+        // 未使用
         long ledgerEndTerm;
-        // 当前日志的最大序列，即下一条日志的开始index
+        // 未使用
         long ledgerEndIndex;
         synchronized (memberState) {
             if (!memberState.isCandidate()) {
@@ -222,19 +209,12 @@ public class DLedgerLeaderElector {
         long startVoteTimeMs = LocalDateTime.now().toInstant(ZoneOffset.of("+8")).toEpochMilli();
         /** 向集群内的其他节点发起投票请求，并返回投票结果列表**/
         final List<CompletableFuture<VoteResponse>> quorumVoteResponses = voteForQuorumResponses(term, ledgerEndTerm, ledgerEndIndex);
-        // 已知的最大投票轮次
         final AtomicLong knownMaxTermInGroup = new AtomicLong(-1);
-        // 所有投票票数
         final AtomicInteger allNum = new AtomicInteger(0);
-        // 有效投票数
         final AtomicInteger validNum = new AtomicInteger(0);
-        // 获得的投票数
         final AtomicInteger acceptedNum = new AtomicInteger(0);
-        // 未准备投票的节点数量，如果对端节点的投票轮次小于发起投票的轮次，则认为对端未准备好，对端节点使用本次的轮次进入Candidate状态
         final AtomicInteger notReadyTermNum = new AtomicInteger(0);
-        // 发起投票的节点的ledgerEndTerm小于对端节点的个数
         final AtomicInteger biggerLedgerNum = new AtomicInteger(0);
-        // 是否已经存在Leader
         final AtomicBoolean alreadyHasLeader = new AtomicBoolean(false);
 
         CountDownLatch voteLatch = new CountDownLatch(1);
@@ -409,7 +389,6 @@ public class DLedgerLeaderElector {
         final AtomicBoolean inconsistLeader = new AtomicBoolean(false);//标识从节点已经有了其他
         final CountDownLatch beatLatch = new CountDownLatch(1);
         long startHeartbeatTimeMs = System.currentTimeMillis();
-        // 遍历集群中的节点，异步发送心跳包
         for (String id : memberState.getPeerMap().keySet()) {
             if (memberState.getSelfId().equals(id)) {
                 continue;
@@ -523,7 +502,6 @@ public class DLedgerLeaderElector {
 
         //异常情况
         //hold the lock to get the latest term and leaderId
-        // 加锁来处理（这里更多的是从节点第一次收到主节点的心跳包）
         synchronized (memberState) {
             if (request.getTerm() < memberState.currTerm()) {
                 // 如果主节的投票轮次小于当前投票轮次，则返回主节点投票轮次过期
@@ -541,15 +519,11 @@ public class DLedgerLeaderElector {
                     lastLeaderHeartBeatTime = System.currentTimeMillis();
                     return CompletableFuture.completedFuture(new HeartBeatResponse(request));
                 } else {
-                    //this should not happen, but if happened
-                    // 如果从节点的主节点与发送心跳包的节点ID不同，说明有另外一个Leader，按道理来说是不会发生的
                     // 如果发生，则返回已存在-主节点，标记该心跳包处理结束
                     logger.error("[{}][BUG] currTerm {} has leader {}, but received leader {}", memberState.getSelfId(), memberState.currTerm(), memberState.getLeaderId(), request.getLeaderId());
                     return CompletableFuture.completedFuture(new HeartBeatResponse(request).code(DLedgerResponseCode.INCONSISTENT_LEADER.getCode()));
                 }
             } else {
-                //To make it simple, for larger term, do not change to follower immediately
-                //first change to candidate, and notify the state-maintainer thread
                 // 如果主节点的投票轮次大于从节点的投票轮次，则认为从节点没有准备好，则从节点进入Candidate状态，并立即发起一次投票。
                 changeRoleToCandidate(request.getTerm());
                 needIncreaseTermImmediately = true;
@@ -574,8 +548,8 @@ public class DLedgerLeaderElector {
             VoteRequest voteRequest = new VoteRequest();
             voteRequest.setRequestNum(String.valueOf(CommonUtil.getSeq()));//发送序号
             voteRequest.setGroup(memberState.getGroup());
-            voteRequest.setLedgerEndIndex(ledgerEndIndex);//发起投票节点维护的已知的最大日志条目索引。
-            voteRequest.setLedgerEndTerm(ledgerEndTerm);//发起投票节点维护的已知的最大投票轮次。
+            voteRequest.setLedgerEndIndex(ledgerEndIndex);//未使用，默认值
+            voteRequest.setLedgerEndTerm(ledgerEndTerm);//未使用，默认值
             voteRequest.setLeaderId(memberState.getSelfId());
             voteRequest.setTerm(term);//发起投票的节点当前的投票轮次
             voteRequest.setRemoteId(id);

@@ -117,7 +117,7 @@ class ClusterInfoInterval implements  TimerTask{
      * 获取集群信息
      */
     public void getClusterInfo(){
-        Map<String,Object> clientMap = (Map<String, Object>) IRpcContext.yumInfo.get("client");
+        Map<String,Object> clientMap = (Map<String, Object>) IRpcContext.yumInfo.get("iRpcClient");
         int retryTimes = clientMap.get("retryTimes") == null ?
                 3 : Integer.parseInt(String.valueOf(clientMap.get("retryTimes")));
         List<String> clientChannelKeys = new ArrayList<>();
