@@ -13,7 +13,7 @@ iRpcClient:
 iRpcServer:
   serverPort: 10916
   heartbeat: 60 # min
-  ClusterNode: #如果使用单机，则不配置该项,node从n1开始，n0属于localhost
+  ClusterNode: #如果使用单机，则不配置该项,node从n1开始
     - node: n0
       ip: 127.0.0.1
       port: 10916

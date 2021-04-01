@@ -1,49 +1,41 @@
 # iRpc
 
 #### 介绍
-iRpc为一款基于netty实现的轻量级高性能rpc框架,支持单机及leader-follower部署模式,配置简单，通信效率高，优先适用于物联网应用场景。
+iRpc为一款基于Nio通信实现的轻量级高性能rpc框架,支持单机及leader-follower部署模式,配置简单，通信效率高。
+提供同步和异步(callBack模式)等多种消息发送方式,不依赖于第三方注册中心即可实现服务端自主选举（选举模块基于dleger源码改造），
 
-#### 软件架构
-软件架构说明
+#### 启动类
 
+##### ServerStarter 启动类
 
-#### 消息类型
-0.  心跳消息
-1.  基本消息类型
-2.  选举消息，服务节点选举使用
+- 构造方法
 
-#### 使用说明
+|      构造方法      | 作用 |
+|------------- |----------|
+| 		ServerStarter()	   |	默认加载配置文件名为"application.yml"的配置文件，加载位置默认为resources目录下  |
+| 		ServerStarter(String pathName)	   |	指定配置yml文件名称,格式为xxx.yml  | 
+| 		...	   |	动态指定配置信息--待开发  | 
 
-1.  iRpc.base.starter.ClientStarter 为客户端启动模块：当应用服务作为iRpc客户端时需手动实例化该实例，默认配置文件为application.yml；
-    配置文件可以通过带参构造方法动态指定；
-2.  iRpc.base.starter.ServerStarter 为服务端启动模块：当应用服务作为iRpc服务端时需手动实例化该实例，默认配置文件为application.yml；
-    配置文件可以通过带参构造方法动态指定；
+- server端yml配置信息详解
+  
+  |      参数名称      | 含义 |
+  |------------- |----------|
+  | 		iRpcServer   | iRpc服务端配置信息	  |
+  | 		serverPort	   |	服务端监听端口  |
+  | 		heartbeat	   |	服务端监测客户端心跳周期-暂未使用  |
+  | 		ClusterNode   |	 leader-flower集群模式节点信息，集群模式下多个节点的ClusterNode信息一样 |
+  | 		node   |	节点名称(建议使用：n0-nx，沿用的是dleger的模式)，  |
+  | 		ip   |	iRpcServer节点ip地址（或域名）  |
+  | 		port   |	iRpcServer节点服务端口  |
 
-
-
-#### 配置信息详解
-
-```
-#iRpc客户端配置信息
-client:
-  retryTimes: 3
-  serverModCluster: true
-  serverNode:
-    - ip: 127.0.0.1 # 指定iRpc客户端连接的iRpc服务端节点信息，默认与第一个节点建立连接。
-      port: 10916
-    - ip: 127.0.0.1
-      port: 10917
-    - ip: 127.0.0.1
-      port: 10918
-```
-
+- yml配置信息模版
 
 ```
 ## iRpc服务端配置信息
-server:
+iRpcServer:
   serverPort: 10916
   heartbeat: 60 # iRpc服务端检测iRpc客户端连接状态的最大心跳周期。
-  ClusterNode: #如果使用单机，则不配置该项,node从n1开始，n0属于localhost,基于raft算法选举leader节点
+  ClusterNode: #如果使用单机，则不配置该项,node从n1开始，n0属于localhost
     - node: n0
       ip: 127.0.0.1
       port: 10916
@@ -57,27 +49,115 @@ server:
 ```
 
 
+##### ClientStarter 启动类
+
+- 构造方法
+
+|      构造方法      | 作用 |
+|------------- |----------|
+| 		ClientStarter()	   |	默认加载配置文件名为"application.yml"的配置文件，加载位置默认为resources目录下  |
+| 		ClientStarter(String pathName)	   |	指定配置yml文件名称,格式为xxx.yml  | 
+| 		...	   |	动态指定配置信息--待开发  | 
+
+- 配置参数详解
+
+  |      参数名称      | 含义 |
+    |------------- |----------|
+  | 		iRpcClient   | iRpc客户端配置信息	  |
+  | 		retryTimes	   |	serverNode节点网络连接失败重试次数，默认为3次  |
+  | 		serverModCluster	   | true/false	服务端是否为leader-flower模式  |
+  | 		serverNode   |	 iRpc server端节点信息 |
+  | 		ip   |	iRpcServer节点ip地址（或域名）  |
+  | 		port   |	iRpcServer节点服务端口  |
+
+- yml配置信息模版
+
+```
+#iRpc客户端配置信息
+iRpcClient:
+  retryTimes: 3
+  serverModCluster: true
+  serverNode:
+    - ip: 127.0.0.1 # 指定iRpc客户端连接的iRpc服务端节点信息，默认与第一个节点建立连接。
+      port: 10916
+    - ip: 127.0.0.1
+      port: 10917
+    - ip: 127.0.0.1
+      port: 10918
+```
+
+
+
+#### 消息发送
+消息发送核心类为iRpc.base.messageDeal.MessageSender
+
+|     方法名称      | 发送模式 |返回结果 |
+    |------------- |----------|----------|
+| 		synBaseMsgSend   | 同步	  |	 ResponseData对象，returncode != 200 发送失败 |
+| 		asynBaseMsgSend	   |	异步  | boolean,发布成功或失败，通过回调方式异步处理方法执行结果  |
+
+
+
+
 #### 启动流程
 ![流程](https://images.gitee.com/uploads/images/2021/0328/113300_2ae87b28_1038477.png "流程.png")
 
 #### 如何引入
-![maven](https://images.gitee.com/uploads/images/2021/0330/212958_4046ad06_1038477.png "maven.png")
 
+iRpc发行版本已同步到maven中央仓库，因此根据项目实际情况选择合适版本引入即可
 
 ```
 <dependency>
   <groupId>io.github.brianapple</groupId>
   <artifactId>iRpc</artifactId>
-  <version>1.0.1-Release</version>
+  <version>1.0.2-Release</version>
 </dependency>
 ```
 
+1.0.2.Release 修复了1.0.1及之前版本，客户端无法正常启动的异常。
+
+#### 客户端demo
+
+```
+public class Test {
+	public static void main(String[] args) {
+		ServerRpc();
+	}
+	/**
+	 * rpc服务端
+	 */
+	public static void ServerRpc(){
+		ClientStarter clientStarter = new ClientStarter();
+		try {
+			Thread.sleep(6000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		while(true) {
+			/**
+			 * 同步消息发送
+			 */
+			Class<? >[] classType = new Class[]{String.class};
+			Object[] argsData = new Object[]{"world"};
+			ResponseData ret = MessageSender.synBaseMsgSend(false,
+					"iRpc.rpcService.RPCExportServiceImpl",
+					"test",
+					classType,
+					argsData,
+					5000);
+
+			System.out.println("客户端同步收到数据："+ret.getData());
+			//控制台输出：客户端同步收到数据：hello world
+		}
+	}
+
+}
+```
 
 #### 感谢
 Netty 项目及作者，项目地址： https://github.com/netty/netty
-
 dledger 项目及作者，项目地址： https://github.com/openmessaging/openmessaging-storage-dledger
-
+IOTGate 项目及作者，项目地址：https://gitee.com/willbeahero/IOTGate
 
 #### 参与贡献
 
