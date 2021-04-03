@@ -9,7 +9,6 @@ import iRpc.dataBridge.vote.ClusterInfo;
 import iRpc.socketAware.RemoteClient;
 import iRpc.util.CommonUtil;
 import iRpc.util.YamlUtil;
-import iRpc.vote.DLedgerLeaderElector;
 import io.netty.channel.Channel;
 import io.netty.util.Timeout;
 import io.netty.util.TimerTask;
@@ -58,13 +57,15 @@ public class ClientStarter implements Istarter{
             throw new RuntimeException("ClientStarter is started once");
         }
         //获取配置信息
-        Map<String,Object> clientMap = (Map<String, Object>) IRpcContext.yumInfo.get("iRpcClient");
+        @SuppressWarnings("unchecked")
+		Map<String,Object> clientMap = (Map<String, Object>) IRpcContext.yumInfo.get("iRpcClient");
         if(clientMap != null ){
             boolean isCluster = clientMap.get("serverModCluster") == null ?
                                         false :  Boolean.valueOf(String.valueOf(clientMap.get("serverModCluster"))) ;
-            List<Map<String,Object>> lists = (List<Map<String, Object>>) clientMap.get("serverNode");
+            @SuppressWarnings("unchecked")
+			List<Map<String,Object>> lists = (List<Map<String, Object>>) clientMap.get("serverNode");
             //启动时，配置文件0节点为服务端节点
-            IRpcContext.LeaderNode = IRpcContext.DEFUAL_CHANNEL+lists.get(0).get("ip")+":"+lists.get(0).get("port");
+            IRpcContext.LeaderNode = IRpcContext.DEFUAL_CLIENT_CHANNEL_PREFIX+lists.get(0).get("ip")+":"+lists.get(0).get("port");
 
             int retryTimes = clientMap.get("retryTimes") == null ?
                                 3 : Integer.parseInt(String.valueOf(clientMap.get("retryTimes")));
@@ -79,7 +80,7 @@ public class ClientStarter implements Istarter{
                                     for (int i = 0 ; i < retryTimes ; i ++){
                                         RemoteClient remoteClient = new RemoteClient();
                                         boolean isSuc = remoteClient.start(ip,Integer.parseInt(port),
-                                                IRpcContext.DEFUAL_CHANNEL+String.format("%s:%s",ip,port));
+                                                IRpcContext.DEFUAL_CLIENT_CHANNEL_PREFIX+String.format("%s:%s",ip,port));
                                         if (!isSuc){
                                             try {
                                                 Thread.sleep(2000);
@@ -127,7 +128,8 @@ class ClusterInfoInterval implements  TimerTask{
      * 获取集群信息
      */
     public void getClusterInfo(){
-        Map<String,Object> clientMap = (Map<String, Object>) IRpcContext.yumInfo.get("iRpcClient");
+        @SuppressWarnings("unchecked")
+		Map<String,Object> clientMap = (Map<String, Object>) IRpcContext.yumInfo.get("iRpcClient");
         int retryTimes = clientMap.get("retryTimes") == null ?
                 3 : Integer.parseInt(String.valueOf(clientMap.get("retryTimes")));
         List<String> clientChannelKeys = new ArrayList<>();
@@ -138,27 +140,33 @@ class ClusterInfoInterval implements  TimerTask{
             Set<String> keys=  IRpcContext.ClusterPeersInfo.keySet();
             for (String key: keys
                  ) {
-                clientChannelKeys.add(IRpcContext.DEFUAL_CHANNEL+IRpcContext.ClusterPeersInfo.get(key));
+                clientChannelKeys.add(IRpcContext.DEFUAL_CLIENT_CHANNEL_PREFIX+IRpcContext.ClusterPeersInfo.get(key));
             }
         }
         ResponseData responseData = MessageSender.synBaseMsgSend(clientChannelKeys,
                 false,
                 "iRpc.vote.service.ClusterInfoService",
                 "getClusterInfo",
-                2000);
+                1800);
         ClusterInfo clusterInfo = (ClusterInfo) responseData.getData();
-        if(clusterInfo == null){
+        
+        if(clusterInfo == null 
+        		|| clusterInfo.getPeers().get(clusterInfo.getLeaderId()) == null
+        			|| clusterInfo.getPeers() == null
+        				|| clusterInfo.getPeers().size() == 0 ){
+        	//leader为空/集群节点为空
             return;
         }
-        IRpcContext.LeaderNode = IRpcContext.DEFUAL_CHANNEL+clusterInfo.getPeers().get(clusterInfo.getLeaderId());
-        logger.debug("leaderNode：{}",IRpcContext.DEFUAL_CHANNEL+clusterInfo.getPeers().get(clusterInfo.getLeaderId()));
+        logger.debug("fetch leaderNode：{}",IRpcContext.DEFUAL_CLIENT_CHANNEL_PREFIX+clusterInfo.getPeers().get(clusterInfo.getLeaderId()));
+        IRpcContext.LeaderNode = IRpcContext.DEFUAL_CLIENT_CHANNEL_PREFIX+clusterInfo.getPeers().get(clusterInfo.getLeaderId());
+        
         IRpcContext.ClusterPeersInfo = clusterInfo.getPeers();
 
         Set<Map.Entry<String, String>> set = clusterInfo.getPeers().entrySet();
         for (Map.Entry<String, String> entry:set
              ) {
             String addr = entry.getValue();
-            Channel channel = CommonLocalCache.ClientChannelCache.getChannel(IRpcContext.DEFUAL_CHANNEL+addr);
+            Channel channel = CommonLocalCache.ClientChannelCache.getChannel(IRpcContext.DEFUAL_CLIENT_CHANNEL_PREFIX+addr);
             if (channel == null){
                 RemoteClient remoteClient = new RemoteClient();
                 String ip = addr.split(":")[0];
@@ -169,7 +177,7 @@ class ClusterInfoInterval implements  TimerTask{
                         for (int i = 0 ; i < retryTimes ; i ++){
 
                             boolean isSuc = remoteClient.start(ip,Integer.parseInt(port),
-                                    IRpcContext.DEFUAL_CHANNEL+String.format("%s:%s",ip,port));
+                                    IRpcContext.DEFUAL_CLIENT_CHANNEL_PREFIX+String.format("%s:%s",ip,port));
                             try {
                                 Thread.sleep(2000);
                             } catch (InterruptedException e) {

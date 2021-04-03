@@ -1,7 +1,6 @@
 package iRpc.base.messageDeal;
 
 import iRpc.base.IRpcContext;
-import iRpc.base.concurrent.ThreadFactoryImpl;
 import iRpc.base.processor.IProcessor;
 import iRpc.cache.CommonLocalCache;
 import iRpc.dataBridge.IDataSend;
@@ -16,14 +15,12 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
  * 消息发送
  */
+@SuppressWarnings("rawtypes")
 public class MessageSender implements IMessageSender {
     /**
      * 同步发送数据
@@ -32,7 +29,8 @@ public class MessageSender implements IMessageSender {
      * @param <T>
      * @return
      */
-    private static <R,T> R  synMessageSend(T msg,int timeout){
+    @SuppressWarnings("unchecked")
+	private static <R,T> R  synMessageSend(T msg,int timeout){
         if(msg instanceof  SendData){
             SendData<IDataSend>  sendData= (SendData<IDataSend>) msg;
             Channel  channel= ((SendData<IDataSend>) msg).getChannel();
@@ -99,7 +97,7 @@ public class MessageSender implements IMessageSender {
      */
     private  static ResponseData synMessageSend2Server(int msgType, IDataSend data, int timeout,String channelName){
         Channel channel =
-                channelName.startsWith(IRpcContext.DEFUAL_CHANNEL) ?
+                channelName.startsWith(IRpcContext.DEFUAL_CLIENT_CHANNEL_PREFIX) ?
                         CommonLocalCache.ClientChannelCache.getChannel(channelName) :CommonLocalCache.ChannelCache.getChannel(channelName);
         if (channel == null){
             return new ResponseData(data.getRequestNum(),500);
@@ -116,7 +114,7 @@ public class MessageSender implements IMessageSender {
      */
     private static boolean asynMessaSend2Server(int msgType,IDataSend data,IProcessor task,String channelName){
         Channel channel =
-                channelName.startsWith(IRpcContext.DEFUAL_CHANNEL) ?
+                channelName.startsWith(IRpcContext.DEFUAL_CLIENT_CHANNEL_PREFIX) ?
                         CommonLocalCache.ClientChannelCache.getChannel(channelName) :CommonLocalCache.ChannelCache.getChannel(channelName);
         if (channel == null){
             return false;

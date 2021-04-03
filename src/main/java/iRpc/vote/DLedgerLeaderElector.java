@@ -260,7 +260,6 @@ public class DLedgerLeaderElector {
                             	break;
                             default:
                                 break;
-
                         }
                     }
                     if (alreadyHasLeader.get()
@@ -624,23 +623,6 @@ public class DLedgerLeaderElector {
                 //only can handleVote when the term is consistent
                 return CompletableFuture.completedFuture(new VoteResponse(request).term(memberState.currTerm()).voteResult(VoteResponse.RESULT.REJECT_TERM_NOT_READY));
             }
-
-            /**
-             * 判断请求节点的ledgerEndTerm与当前节点的ledgerEndTerm，这里主要是为了判断日志的复制进度
-             */
-            // assert acceptedTerm is true
-//            if (request.getLedgerEndTerm() < memberState.getLedgerEndTerm()) {
-//                // 如果请求节点的ledgerEndTerm小于当前节点的ledgerEndTerm则拒绝，其原因是请求节点的日志复制进度比当前节点低，这种情况是不能成为主节点的
-//                return CompletableFuture.completedFuture(new VoteResponse(request).term(memberState.currTerm()).voteResult(VoteResponse.RESULT.REJECT_EXPIRED_LEDGER_TERM));
-//            } else if (request.getLedgerEndTerm() == memberState.getLedgerEndTerm() && request.getLedgerEndIndex() < memberState.getLedgerEndIndex()) {
-//                // 如果ledgerEndTerm相等，但是ledgerEndIndex比当前节点小，则拒绝，原因同上
-//                return CompletableFuture.completedFuture(new VoteResponse(request).term(memberState.currTerm()).voteResult(VoteResponse.RESULT.REJECT_SMALL_LEDGER_END_INDEX));
-//            }
-//
-//            if (request.getTerm() < memberState.getLedgerEndTerm()) {
-//                // 如果请求的Term小于ledgerEndTerm，则拒绝
-//                return CompletableFuture.completedFuture(new VoteResponse(request).term(memberState.getLedgerEndTerm()).voteResult(VoteResponse.RESULT.REJECT_TERM_SMALL_THAN_LEDGER));
-//            }
 
             memberState.setCurrVoteFor(request.getLeaderId());
             return CompletableFuture.completedFuture(new VoteResponse(request).term(memberState.currTerm()).voteResult(VoteResponse.RESULT.ACCEPT));

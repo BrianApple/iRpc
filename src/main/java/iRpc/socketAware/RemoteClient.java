@@ -45,7 +45,7 @@ public class RemoteClient {
 	public boolean start(String ip, int port, String channelName) {
 		ClientHandler clientHandler = new ClientHandler();
 		//iRpc客户端不通过看门狗重连
-		boolean isTryAgain = channelName.startsWith(IRpcContext.DEFUAL_CHANNEL) ? false :true ;
+		boolean isTryAgain = channelName.startsWith(IRpcContext.DEFUAL_CLIENT_CHANNEL_PREFIX) ? false :true ;
 		if (singleBootstrap == null){
 			synchronized (lock){
 				if (singleBootstrap == null){
@@ -88,7 +88,7 @@ public class RemoteClient {
 		/**
 		 *
 		 */
-		if(channelName.startsWith(IRpcContext.DEFUAL_CHANNEL)){
+		if(channelName.startsWith(IRpcContext.DEFUAL_CLIENT_CHANNEL_PREFIX)){
 			//iRpc client 
 			ChannelFuture channelFuture = singleBootstrap.connect(ip, port).awaitUninterruptibly();
 			if(channelFuture.isSuccess()){

@@ -3,7 +3,6 @@ package iRpc.vote.service;
 import iRpc.cache.CommonLocalCache;
 import iRpc.dataBridge.vote.ClusterInfo;
 import iRpc.service.IRPCService;
-import iRpc.vote.DLedgerLeaderElector;
 import iRpc.vote.MemberState;
 
 /**

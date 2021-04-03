@@ -25,6 +25,7 @@ import iRpc.vote.DLedgerLeaderElector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import iRpc.base.concurrent.ClusterExecutors;
 import iRpc.base.concurrent.ThreadFactoryImpl;
 import iRpc.dataBridge.RequestData;
 import iRpc.dataBridge.ResponseData;
@@ -123,28 +124,35 @@ public class RemoteServer {
      * 服务端handler
      */
     class NettyServerHandler extends SimpleChannelInboundHandler<Object> {
-
+    	@SuppressWarnings({"rawtypes", "unchecked"})
         @Override
         protected void channelRead0(ChannelHandlerContext ctx, Object msg) throws Exception {
             if(msg instanceof List){
-                List<RecieveData> listData = (List)msg;
+                
+				List<RecieveData> listData = (List)msg;
                 int size = listData.size();
                 for (int i = 0 ; i < size ; i++){
                     RecieveData recieveData = listData.get(i);
                     switch (MessageType.getMessageType(recieveData.getMsgType())){
                         case BASE_MSG:
-                            RequestData requestData = (RequestData) recieveData.getData();
-                            ResponseData rpcResponse = new ResponseData(requestData.getRequestNum(),200);
-                            try {
-                                Object data = handleRpcRquest(requestData);
-                                rpcResponse.setData(data);
-                            } catch (Throwable throwable) {
-                                rpcResponse.setReturnCode(500);
-                                rpcResponse.setErroInfo(throwable);
-                                logger.error("服务执行异常",throwable);
-                            }
-                            SendData<ResponseData> sendData = new SendData<ResponseData>(recieveData.getMsgType(), rpcResponse);
-                            ctx.writeAndFlush(sendData);
+                        	ClusterExecutors.baseMsgExecutor.execute(new Runnable() {
+								@Override
+								public void run() {
+									RequestData requestData = (RequestData) recieveData.getData();
+		                            ResponseData rpcResponse = new ResponseData(requestData.getRequestNum(),200);
+		                            try {
+		                                Object data = handleRpcRquest(requestData);
+		                                rpcResponse.setData(data);
+		                            } catch (Throwable throwable) {
+		                                rpcResponse.setReturnCode(500);
+		                                rpcResponse.setErroInfo(throwable);
+		                                logger.error("服务执行异常",throwable);
+		                            }
+		                            SendData<ResponseData> sendData = new SendData<ResponseData>(recieveData.getMsgType(), rpcResponse);
+		                            ctx.writeAndFlush(sendData);
+								}
+							});
+                            
                             break;
                         case HEART_MSG:
                             logger.debug("服务端收到心跳消息：{}", JSON.toJSONString(recieveData.getData()));

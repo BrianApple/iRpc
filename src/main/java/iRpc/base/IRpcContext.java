@@ -13,9 +13,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class IRpcContext {
     public static boolean isCluster = false;
-    public static final String DEFUAL_CHANNEL = "cliChannel_";//iRpc 客户端会话信息
+    public static final String DEFUAL_CLIENT_CHANNEL_PREFIX = "cliChannel_";//iRpc 客户端会话信息
     public static final AttributeKey<String> ATTRIBUTEKEY_IRPC_CLIENT = AttributeKey.valueOf("iRpcClient");
-    public static final String PropertyName = "application.yml";
+    public static final String PropertyName = "application3.yml";
 
     /**
      * yml配置文件map
