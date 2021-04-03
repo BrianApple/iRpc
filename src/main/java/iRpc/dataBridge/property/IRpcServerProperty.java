@@ -17,6 +17,7 @@ import java.util.Map;
 public class IRpcServerProperty implements PropertyForMap {
 	private String serverPort;
 	private String heartbeat;
+	private String groupName;
 	private List<NodeInfo> clusterNode;
 	public String getServerPort() {
 		return serverPort;
@@ -30,6 +31,12 @@ public class IRpcServerProperty implements PropertyForMap {
 	public void setHeartbeat(String heartbeat) {
 		this.heartbeat = heartbeat;
 	}
+	public String getGroupName() {
+		return groupName;
+	}
+	public void setGroupName(String groupName) {
+		this.groupName = groupName;
+	}
 	public List<NodeInfo> getClusterNode() {
 		return clusterNode;
 	}
@@ -42,6 +49,7 @@ public class IRpcServerProperty implements PropertyForMap {
 		Map<String,Object> iRpcClientMap = new HashMap<String, Object>();
 		iRpcClientMap.put("serverPort", this.serverPort);
 		iRpcClientMap.put("heartbeat", this.heartbeat);
+		iRpcClientMap.put("groupName", this.groupName);
 		List<Map<String,Object>> serverNodes = new ArrayList<Map<String,Object>>();
 		Map<String,Object> nodeInfoMap = null;
 		for (NodeInfo nodeInfo : this.clusterNode) {

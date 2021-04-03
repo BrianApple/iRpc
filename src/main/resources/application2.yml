@@ -14,6 +14,7 @@ iRpcClient:
 iRpcServer:
   serverPort: 10917
   heartbeat: 60 # min
+  groupName: default
   ClusterNode: #如果使用单机，则不配置该项,node从n0开始，n0属于自己
     - node: n0
       ip: 127.0.0.1

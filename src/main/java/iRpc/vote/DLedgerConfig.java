@@ -17,7 +17,6 @@
 
 package iRpc.vote;
 
-import com.beust.jcommander.Parameter;
 import java.io.File;
 
 /**
@@ -30,12 +29,14 @@ public class DLedgerConfig {
 
     public static final String MEMORY = "MEMORY";
     public static final String FILE = "FILE";
-
+    /**
+     * 组名字
+     */
     private String group = "default";
 
-    private String selfId = "n0";//当前服务节点id
+    private String selfId = "n0";//根据服务端口自动识别服务当前节点名称
 
-    private String peers = "n0-localhost:10916";//当前rpc集群所有节点信息，用分号分割
+    private StringBuffer peers = new StringBuffer();//当前rpc集群所有节点信息，用分号分割,thread-safe
 
     private String storeBaseDir = File.separator + "tmp" + File.separator + "dledgerstore";
 
@@ -111,11 +112,15 @@ public class DLedgerConfig {
     }
 
     public String getPeers() {
-        return peers;
+        return peers.toString();
     }
 
-    public void setPeers(String peers) {
-        this.peers = peers;
+    /**
+     * 节点动态扩容时，会存在并发
+     * @param peers
+     */
+    public synchronized void setPeers(String peers) {
+        this.peers = new StringBuffer(peers);
     }
 
     public String getStoreBaseDir() {
@@ -154,7 +159,7 @@ public class DLedgerConfig {
     }
 
     public DLedgerConfig peers(String peers) {
-        this.peers = peers;
+        this.peers = new StringBuffer(peers);
         return this;
     }
 

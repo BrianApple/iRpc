@@ -21,6 +21,7 @@ import com.alibaba.fastjson.JSON;
 import iRpc.base.concurrent.ThreadFactoryImpl;
 import iRpc.base.messageDeal.MessageSender;
 import iRpc.dataBridge.vote.*;
+import iRpc.socketAware.RemoteClient;
 import iRpc.util.CommonUtil;
 import iRpc.util.DLedgerUtils;
 import org.slf4j.Logger;
@@ -89,8 +90,6 @@ public class DLedgerLeaderElector {
     private StateMaintainer stateMaintainer = new StateMaintainer();
 
     private ExecutorService executorService = Executors.newFixedThreadPool(4,new ThreadFactoryImpl("dledgerLeaderElector_",false));
-    private VoteRequest voteRequest;
-
     public DLedgerLeaderElector(DLedgerConfig dLedgerConfig, MemberState memberState ) {
         this.dLedgerConfig = dLedgerConfig;
         this.memberState = memberState;
@@ -189,7 +188,6 @@ public class DLedgerLeaderElector {
                 long prevTerm = memberState.currTerm();
 
                 term = memberState.nextTerm();//清空已投过的票
-                System.err.println("清空当前节点之前投票，当前term = "+ term);
                 logger.info("{}_[INCREASE_TERM] from {} to {}", memberState.getSelfId(), prevTerm, term);
                 lastParseResult = VoteResponse.ParseResult.WAIT_TO_REVOTE;
             } else {
@@ -243,7 +241,6 @@ public class DLedgerLeaderElector {
                                 alreadyHasLeader.compareAndSet(false, true);
                                 break;
                             case REJECT_TERM_SMALL_THAN_LEDGER:
-                                //拒绝票，如果自己维护的term小于远端维护的ledgerEndTerm，则返回该结果，如果对端的team大于自己的team，需要记录对端最大的投票轮次，以便更新自己的投票轮次。
                             case REJECT_EXPIRED_VOTE_TERM:
                                 //拒绝票，如果自己维护的term小于远端维护的term，更新自己维护的投票轮次
                                 if (x.getTerm() > knownMaxTermInGroup.get()) {
@@ -251,15 +248,16 @@ public class DLedgerLeaderElector {
                                 }
                                 break;
                             case REJECT_EXPIRED_LEDGER_TERM:
-                                //拒绝票，如果自己维护的 ledgerTerm小于对端维护的ledgerTerm，则返回该结果。如果是此种情况，增加计数器- biggerLedgerNum的值。
                             case REJECT_SMALL_LEDGER_END_INDEX:
-                                //拒绝票，如果对端的ledgerTeam与自己维护的ledgerTeam相等，但是自己维护的dedgerEndIndex小于对端维护的值，返回该值，增加biggerLedgerNum计数器的值。
                                 biggerLedgerNum.incrementAndGet();
                                 break;
                             case REJECT_TERM_NOT_READY:
-                                //拒绝票，对端的投票轮次小于自己的team，则认为对端还未准备好投票，对端使用自己的投票轮次，使自己进入到Candidate状态。
+                                //拒绝票，对端的投票轮次小于自己的team
                                 notReadyTermNum.incrementAndGet();
                                 break;
+                            case MEMBER_ADDED_VOTE_NEXT:
+                            	//拒绝票，当前节点为新扩集群节点
+                            	break;
                             default:
                                 break;
 
@@ -291,11 +289,10 @@ public class DLedgerLeaderElector {
             // ignore
         }
 
-        // 统计选举时间
         lastVoteCost = DLedgerUtils.elapsed(startVoteTimeMs);
         VoteResponse.ParseResult parseResult;
         if (knownMaxTermInGroup.get() > term) {
-            // 如果对端的投票轮次大于发起投票的节点，则该节点使用对端的轮次，重新进入到Candidate状态，并且重置投票计时器，其值为"1个常规计时器"
+            // 如果对端的投票轮次大于发起投票的节点
             parseResult = WAIT_TO_VOTE_NEXT;
             nextTimeToRequestVote = getNextTimeToRequestVote();
             changeRoleToCandidate(knownMaxTermInGroup.get());
@@ -304,18 +301,18 @@ public class DLedgerLeaderElector {
             parseResult = WAIT_TO_VOTE_NEXT;
             nextTimeToRequestVote = getNextTimeToRequestVote() + heartBeatTimeIntervalMs * maxHeartBeatLeak;
         } else if (!memberState.isQuorum(validNum.get())) {
-            // 如果收到的有效票数未超过半数，则重置计时器为"1个常规计时器"，然后等待重新投票
-            // 注意状态为WAIT_TO_REVOTE，该状态下的特征是下次投票时不增加投票轮次
+            // 如果收到的有效票数未超过半数
+            // WAIT_TO_REVOTE，下次投票时不增加投票轮次
             parseResult = VoteResponse.ParseResult.WAIT_TO_REVOTE;
             nextTimeToRequestVote = getNextTimeToRequestVote();
         } else if (memberState.isQuorum(acceptedNum.get())) {
             // 如果得到的赞同票超过半数，则成为Leader
             parseResult = VoteResponse.ParseResult.PASSED;
         } else if (memberState.isQuorum(acceptedNum.get() + notReadyTermNum.get())) {
-            // 如果得到的赞成票加上未准备投票的节点数超过半数，则应该立即发起投票，故其结果为REVOTE_IMMEDIATELY
+            // 如果得到的赞成票加上未准备投票的节点数超过半数
             parseResult = VoteResponse.ParseResult.REVOTE_IMMEDIATELY;
         } else if (memberState.isQuorum(acceptedNum.get() + biggerLedgerNum.get())) {
-            // 如果得到的赞成票加上对端维护的ledgerEndIndex超过半数，则重置计时器，继续本轮次的选举
+            // 如果得到的赞成票加上对端维护的ledgerEndIndex超过半数
             parseResult = VoteResponse.ParseResult.WAIT_TO_REVOTE;
             nextTimeToRequestVote = getNextTimeToRequestVote();
         } else {
@@ -471,12 +468,9 @@ public class DLedgerLeaderElector {
      */
     public CompletableFuture<HeartBeatResponse> handleHeartBeat(HeartBeatRequest request) throws Exception {
 
-        /**
-         * 首先判断当前节点是否在集群节点集合之中，
-         */
         if (!memberState.isPeerMember(request.getLeaderId())) {
-            logger.warn("[BUG] [HandleHeartBeat] remoteId={} is an unknown member", request.getLeaderId());
-            return CompletableFuture.completedFuture(new HeartBeatResponse(request).term(memberState.currTerm()).code(DLedgerResponseCode.UNKNOWN_MEMBER.getCode()));
+    		logger.warn("[BUG] [HandleHeartBeat] remoteId={} is an unknown member", request.getLeaderId());
+    		return CompletableFuture.completedFuture(new HeartBeatResponse(request).term(memberState.currTerm()).code(DLedgerResponseCode.UNKNOWN_MEMBER.getCode()));
         }
 
         /**
@@ -553,11 +547,10 @@ public class DLedgerLeaderElector {
             voteRequest.setLeaderId(memberState.getSelfId());
             voteRequest.setTerm(term);//发起投票的节点当前的投票轮次
             voteRequest.setRemoteId(id);
+            voteRequest.setLocalIP(memberState.getSelfAddr().split("\\:")[0]);
+            voteRequest.setLocalPort(memberState.getSelfAddr().split("\\:")[1]);
             CompletableFuture<VoteResponse> voteResponse = null;
             if (memberState.getSelfId().equals(id)) {
-                /**
-                 * 自己投自己一票
-                 */
                 voteResponse = handleVote(voteRequest, true);
             } else {
                 voteResponse = MessageSender.vote(voteRequest, memberState.getPeerMap().get(id));
@@ -578,10 +571,28 @@ public class DLedgerLeaderElector {
     public CompletableFuture<VoteResponse> handleVote(VoteRequest request, boolean self) {
         //hold the lock to get the latest term, leaderId, ledgerEndIndex
         synchronized (memberState) {
-            // 为了逻辑的完整性对其请求进行检验，除非有BUG存在，否则是不会出现
             if (!memberState.isPeerMember(request.getLeaderId())) {
-                logger.warn("[BUG] [HandleVote] remoteId={} is an unknown member", request.getLeaderId());
-                return CompletableFuture.completedFuture(new VoteResponse(request).term(memberState.currTerm()).voteResult(VoteResponse.RESULT.REJECT_UNKNOWN_LEADER));
+            	if(!memberState.isSameGroup(request.getGroup()) 
+            			|| memberState.getPeerMap().containsKey(request.getLeaderId())
+            					|| request.getLocalIP() == null
+            						|| request.getLocalPort() == null/*nodeID is exist in peers*/){
+            		logger.warn("[BUG] [HandleVote] remoteId={} is an unknown member", request.getLeaderId());
+                    return CompletableFuture.completedFuture(new VoteResponse(request).term(memberState.currTerm()).voteResult(VoteResponse.RESULT.REJECT_UNKNOWN_LEADER));
+            	}else{
+            		//n0-localhost:10916
+            		memberState.getPeerMap().put(request.getLeaderId(), String.format("%s:%s",request.getLocalIP(),request.getLocalPort()));
+            		String newPeers = this.dLedgerConfig.getPeers()+
+            				String.format(";%s-%s:%s", request.getLeaderId(),request.getLocalIP(),request.getLocalPort());
+            		this.dLedgerConfig.setPeers(newPeers);
+            		startClusterInnerClient(request.getLocalIP(),request.getLocalPort());
+            		if (memberState.getLeaderId() != null) {
+            			//use the old leader 
+                        return CompletableFuture.completedFuture(new VoteResponse(request).term(memberState.currTerm()).voteResult(VoteResponse.RESULT.REJECT_ALREADY__HAS_LEADER));
+                    }
+            		// vote new leader
+            		return CompletableFuture.completedFuture(new VoteResponse(request).term(memberState.currTerm()).voteResult(VoteResponse.RESULT.MEMBER_ADDED_VOTE_NEXT));
+            	}
+                
             }
             if (!self && memberState.getSelfId().equals(request.getLeaderId())) {
                 logger.warn("[BUG] [HandleVote] selfId={} but remoteId={}", memberState.getSelfId(), request.getLeaderId());
@@ -634,6 +645,20 @@ public class DLedgerLeaderElector {
             memberState.setCurrVoteFor(request.getLeaderId());
             return CompletableFuture.completedFuture(new VoteResponse(request).term(memberState.currTerm()).voteResult(VoteResponse.RESULT.ACCEPT));
         }
+    }
+    /**
+     * connect to the cluster node
+     * @param ip
+     * @param port
+     */
+    public void startClusterInnerClient(String ip , String port){
+    	iRpc.base.concurrent.ClusterExecutors.executorService.execute(new Runnable() {
+            @Override
+            public void run() {
+                new RemoteClient().start(ip,Integer.parseInt(port),String.format("%s:%s",ip,port));
+
+            }
+        });
     }
 
     /**

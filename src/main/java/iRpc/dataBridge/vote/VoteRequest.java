@@ -18,12 +18,32 @@
 package iRpc.dataBridge.vote;
 
 public class VoteRequest extends RequestOrResponse {
-
+	/**
+	 * ip,port用于集群动态扩容
+	 */
+	private String localIP;
+	private String localPort;
     private long ledgerEndIndex = -1;
 
     private long ledgerEndTerm = -1;
 
-    public long getLedgerEndIndex() {
+    public String getLocalIP() {
+		return localIP;
+	}
+
+	public void setLocalIP(String localIP) {
+		this.localIP = localIP;
+	}
+
+	public String getLocalPort() {
+		return localPort;
+	}
+
+	public void setLocalPort(String localPort) {
+		this.localPort = localPort;
+	}
+
+	public long getLedgerEndIndex() {
         return ledgerEndIndex;
     }
 
@@ -38,4 +58,5 @@ public class VoteRequest extends RequestOrResponse {
     public void setLedgerEndTerm(long ledgerEndTerm) {
         this.ledgerEndTerm = ledgerEndTerm;
     }
+    
 }

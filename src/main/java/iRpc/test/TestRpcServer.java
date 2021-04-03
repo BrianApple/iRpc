@@ -41,6 +41,7 @@ public class TestRpcServer {
 		IRpcServerProperty serverProperty = new IRpcServerProperty();
 		serverProperty.setServerPort("10918");
 		serverProperty.setHeartbeat("60");
+		serverProperty.setGroupName("iRpcGroup");
 		List<NodeInfo> lits = new ArrayList<NodeInfo>();
 		NodeInfo node1 = new NodeInfo();
 		node1.setNode("n0");

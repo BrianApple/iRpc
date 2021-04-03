@@ -7,8 +7,6 @@ import iRpc.base.messageDeal.MessageType;
 import iRpc.base.processor.IProcessor;
 import iRpc.cache.CommonLocalCache;
 import iRpc.dataBridge.RecieveData;
-import iRpc.dataBridge.vote.HeartBeatResponse;
-import iRpc.dataBridge.vote.VoteResponse;
 import iRpc.util.CommonUtil;
 import io.netty.channel.*;
 import org.slf4j.Logger;
@@ -90,14 +88,12 @@ public class RemoteClient {
 		/**
 		 *
 		 */
-
 		if(channelName.startsWith(IRpcContext.DEFUAL_CHANNEL)){
-			//irpc客户端连接
+			//iRpc client 
 			ChannelFuture channelFuture = singleBootstrap.connect(ip, port).awaitUninterruptibly();
 			if(channelFuture.isSuccess()){
 				channel = channelFuture.channel();
 				channel.attr(IRpcContext.ATTRIBUTEKEY_IRPC_CLIENT).set("iRpcClient");
-//				channel.
 				CommonLocalCache.ClientChannelCache.putClientChannel(channelName, channel);
 				logger.info("rpc client is connect to server {}:{}", ip, port);
 				return true;
@@ -106,6 +102,7 @@ public class RemoteClient {
 				return false;
 			}
 		}else{
+			//inner cluster node
 			while(true){
 				ChannelFuture channelFuture = singleBootstrap.connect(ip, port).awaitUninterruptibly();
 				if(channelFuture.isSuccess()){
@@ -117,7 +114,7 @@ public class RemoteClient {
 					logger.error("cluster node {} connected failed ,try again later.....",String.format("%s:%s",ip,port));
 				}
 				try {
-					Thread.sleep(2000);
+					Thread.sleep(3000);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
@@ -141,9 +138,11 @@ public class RemoteClient {
 		@Override
 		public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
 			if (msg instanceof List) {
+				@SuppressWarnings({ "rawtypes", "unchecked" })
 				List<RecieveData> listData = (List) msg;
 				int size = listData.size();
 				for (int i = 0; i < size; i++) {
+					@SuppressWarnings("rawtypes")
 					RecieveData recieveData = listData.get(i);
 					switch (MessageType.getMessageType(recieveData.getMsgType())) {
 						case BASE_MSG:
@@ -162,7 +161,7 @@ public class RemoteClient {
 									if (iProcessor != null){
 										iProcessor.run(responseData);
 									}else{
-										logger.error("该返回值未查询到回调方法：{}", JSON.toJSONString(responseData));
+										logger.warn("not found callback method：{}", JSON.toJSONString(responseData));
 									}
 								}
 							});
@@ -173,7 +172,7 @@ public class RemoteClient {
 		}
 
 		/**
-		 * 无论是
+		 * 
 		 * @param ctx
 		 * @throws Exception
 		 */

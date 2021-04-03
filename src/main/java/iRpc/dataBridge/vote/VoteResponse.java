@@ -71,7 +71,9 @@ public class VoteResponse extends RequestOrResponse {
         REJECT_EXPIRED_LEDGER_TERM,
         /** 拒绝票，如果对端的ledgerTeam与自己维护的ledgerTeam相等，但是自己维护的ledgerEndIndex小于对端维护的值，返回该值，
          * 增加biggerLedgerNum计数器的值 */
-        REJECT_SMALL_LEDGER_END_INDEX;
+        REJECT_SMALL_LEDGER_END_INDEX,
+        
+        MEMBER_ADDED_VOTE_NEXT;//集群动态扩展成员添加成功,客户端立即进行下一次投票;
     }
 
     public enum ParseResult {

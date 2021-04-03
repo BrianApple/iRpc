@@ -21,10 +21,8 @@ import iRpc.dataBridge.vote.DLedgerResponseCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -63,7 +61,7 @@ public class MemberState {
     /**当前分组中最大的term值**/
     private long knownMaxTermInGroup = -1;
     /** 所有节点及其地址 eq:key= n0  value = "localhost:10916" */
-    private Map<String, String> peerMap = new HashMap<>();
+    private Map<String, String> peerMap = new ConcurrentHashMap<>();
 
     public MemberState(DLedgerConfig config) {
         this.group = config.getGroup();
@@ -134,6 +132,13 @@ public class MemberState {
         return leaderId;
     }
 
+    public boolean isSameGroup(String group){
+    	if(group == null || !group.equals(getGroup())){
+    		return false;
+    	}
+    	return true;
+    }
+    
     public String getGroup() {
         return group;
     }

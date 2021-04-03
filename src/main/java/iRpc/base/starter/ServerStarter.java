@@ -1,9 +1,8 @@
 package iRpc.base.starter;
 
 import iRpc.base.IRpcContext;
-import iRpc.base.concurrent.ThreadFactoryImpl;
+import iRpc.base.concurrent.ClusterExecutors;
 import iRpc.cache.CommonLocalCache;
-import iRpc.dataBridge.property.IRpcClientProperty;
 import iRpc.dataBridge.property.IRpcServerProperty;
 import iRpc.socketAware.RemoteClient;
 import iRpc.socketAware.RemoteServer;
@@ -17,8 +16,6 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
  * @Description 服务端启动类
@@ -69,10 +66,12 @@ public class ServerStarter implements Istarter{
                 return false;
         }
         //获取配置信息
-        Map<String,Object> serverMap = (Map<String, Object>) IRpcContext.yumInfo.get("iRpcServer");
+        @SuppressWarnings("unchecked")
+		Map<String,Object> serverMap = (Map<String, Object>) IRpcContext.yumInfo.get("iRpcServer");
         if(serverMap != null ){
             String serverPort  = String.valueOf( serverMap.get("serverPort"));
             String heartbeat= String.valueOf(serverMap.get("heartbeat"));
+            String groupName= String.valueOf(serverMap.get("groupName"));
 
             //            String nodeIp = (String) m.get("ip");
 //            String nodePort = (String) m.get("port");
@@ -94,8 +93,10 @@ public class ServerStarter implements Istarter{
              */
             if(serverMap.containsKey("ClusterNode")){
                 DLedgerConfig config = new DLedgerConfig();
+                config.setGroup(groupName);
                 //初始化选举器
-                List<Map<String,Object>> lists = (List<Map<String, Object>>)serverMap.get("ClusterNode");
+                @SuppressWarnings("unchecked")
+				List<Map<String,Object>> lists = (List<Map<String, Object>>)serverMap.get("ClusterNode");
                 StringBuffer sb = new StringBuffer();
                 for (Map<String,Object> nodeInfo
                      : lists) {
@@ -129,11 +130,5 @@ public class ServerStarter implements Istarter{
     @Override
     public boolean stop() {
         return false;
-    }
-}
-class ClusterExecutors {
-    public static ExecutorService executorService = null;
-    static{
-        executorService = Executors.newFixedThreadPool(10,new ThreadFactoryImpl("messageSendSyn_",false));
     }
 }
