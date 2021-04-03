@@ -8,6 +8,8 @@ import iRpc.base.starter.ClientStarter;
 import iRpc.base.starter.ServerStarter;
 import iRpc.dataBridge.RequestData;
 import iRpc.dataBridge.ResponseData;
+import iRpc.dataBridge.property.IRpcServerProperty;
+import iRpc.dataBridge.property.NodeInfo;
 import iRpc.dataBridge.vote.VoteRequest;
 import iRpc.dataBridge.vote.VoteResponse;
 import iRpc.socketAware.RemoteServer;
@@ -36,7 +38,28 @@ public class TestRpcServer {
 	 * rpc服务端
 	 */
 	public static void ServerRpc(){
-		ServerStarter serverStarter = new ServerStarter();
+		IRpcServerProperty serverProperty = new IRpcServerProperty();
+		serverProperty.setServerPort("10918");
+		serverProperty.setHeartbeat("60");
+		List<NodeInfo> lits = new ArrayList<NodeInfo>();
+		NodeInfo node1 = new NodeInfo();
+		node1.setNode("n0");
+		node1.setIp("127.0.0.1");
+		node1.setPort("10916");
+		lits.add(node1);
+		NodeInfo node2 = new NodeInfo();
+		node2.setNode("n1");
+		node2.setIp("127.0.0.1");
+		node2.setPort("10917");
+		lits.add(node2);
+		NodeInfo node3 = new NodeInfo();
+		node3.setNode("n2");
+		node3.setIp("127.0.0.1");
+		node3.setPort("10918");
+		lits.add(node3);
+		serverProperty.setClusterNode(lits);;
+		
+		new ServerStarter(serverProperty);
 		try {
 			Thread.sleep(4000);
 		} catch (InterruptedException e) {

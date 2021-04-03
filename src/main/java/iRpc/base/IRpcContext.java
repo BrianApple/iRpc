@@ -2,6 +2,7 @@ package iRpc.base;
 
 import io.netty.util.AttributeKey;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -19,7 +20,7 @@ public class IRpcContext {
     /**
      * yml配置文件map
      */
-    public static Map<String,Object> yumInfo ;
+    public static Map<String,Object> yumInfo = new HashMap<String, Object>();
 
     public static AtomicBoolean serverStarted = new AtomicBoolean(false);
     public static AtomicBoolean clientStarted = new AtomicBoolean(false);

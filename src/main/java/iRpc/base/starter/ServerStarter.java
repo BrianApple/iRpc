@@ -3,6 +3,8 @@ package iRpc.base.starter;
 import iRpc.base.IRpcContext;
 import iRpc.base.concurrent.ThreadFactoryImpl;
 import iRpc.cache.CommonLocalCache;
+import iRpc.dataBridge.property.IRpcClientProperty;
+import iRpc.dataBridge.property.IRpcServerProperty;
 import iRpc.socketAware.RemoteClient;
 import iRpc.socketAware.RemoteServer;
 import iRpc.util.YamlUtil;
@@ -12,6 +14,7 @@ import iRpc.vote.MemberState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -28,15 +31,23 @@ public class ServerStarter implements Istarter{
     private String pathName;
     public ServerStarter() {
         pathName = IRpcContext.PropertyName;
+        IRpcContext.yumInfo.put("iRpcServer",YamlUtil.getTypePropertieMap(pathName).get("iRpcServer"));
         start();
         logger.info("the profile name is {}",pathName);
     }
     public ServerStarter(String pathName) {
         this.pathName = pathName;
+        IRpcContext.yumInfo.put("iRpcServer",YamlUtil.getTypePropertieMap(pathName).get("iRpcServer"));
         start();
         logger.info("the profile name is {}",pathName);
     }
-
+    public ServerStarter(IRpcServerProperty property) {
+    	if( IRpcContext.yumInfo == null){
+    		IRpcContext.yumInfo = new HashMap<String, Object>();
+    	}
+    	IRpcContext.yumInfo.put("iRpcServer", property.fillPropertyByMap());
+        start();
+    }
     /**
      * 初始化选举器，只有集群条件下才会选举
      * @return
@@ -58,8 +69,7 @@ public class ServerStarter implements Istarter{
                 return false;
         }
         //获取配置信息
-        Map<String,Object> map =  YamlUtil.getTypePropertieMap(pathName);
-        Map<String,Object> serverMap = (Map<String, Object>) map.get("iRpcServer");
+        Map<String,Object> serverMap = (Map<String, Object>) IRpcContext.yumInfo.get("iRpcServer");
         if(serverMap != null ){
             String serverPort  = String.valueOf( serverMap.get("serverPort"));
             String heartbeat= String.valueOf(serverMap.get("heartbeat"));

@@ -4,6 +4,7 @@ import iRpc.base.IRpcContext;
 import iRpc.base.messageDeal.MessageSender;
 import iRpc.cache.CommonLocalCache;
 import iRpc.dataBridge.ResponseData;
+import iRpc.dataBridge.property.IRpcClientProperty;
 import iRpc.dataBridge.vote.ClusterInfo;
 import iRpc.socketAware.RemoteClient;
 import iRpc.util.CommonUtil;
@@ -16,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -30,10 +32,19 @@ public class ClientStarter implements Istarter{
     private String pathName;
     public ClientStarter() {
         pathName = IRpcContext.PropertyName;
+        IRpcContext.yumInfo.put("iRpcClient", YamlUtil.getTypePropertieMap(pathName).get("iRpcClient"));
         start();
     }
     public ClientStarter(String pathName) {
         this.pathName = pathName;
+        IRpcContext.yumInfo.put("iRpcClient", YamlUtil.getTypePropertieMap(pathName).get("iRpcClient"));
+        start();
+    }
+    public ClientStarter(IRpcClientProperty property) {
+    	if(IRpcContext.yumInfo == null ){
+    		IRpcContext.yumInfo = new HashMap<String, Object>();
+    	}
+        IRpcContext.yumInfo.put("iRpcClient", property.fillPropertyByMap());
         start();
     }
 
@@ -47,7 +58,6 @@ public class ClientStarter implements Istarter{
             throw new RuntimeException("ClientStarter is started once");
         }
         //获取配置信息
-        IRpcContext.yumInfo =  YamlUtil.getTypePropertieMap(pathName);
         Map<String,Object> clientMap = (Map<String, Object>) IRpcContext.yumInfo.get("iRpcClient");
         if(clientMap != null ){
             boolean isCluster = clientMap.get("serverModCluster") == null ?
