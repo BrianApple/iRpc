@@ -14,7 +14,8 @@ iRpc为一款基于Nio通信实现的轻量级高性能rpc框架,支持单机及
 |------------- |----------|
 | 		ServerStarter()	   |	默认加载配置文件名为"application.yml"的配置文件，加载位置默认为resources目录下  |
 | 		ServerStarter(String pathName)	   |	指定配置yml文件名称,格式为xxx.yml  | 
-| 		...	   |	动态指定配置信息--待开发  | 
+| 		ServerStarter(IRpcServerProperty property)	   |	通过javaBean方式配置服务端信息  | 
+| 		...	   |	带扩展  | 
 
 - server端yml配置信息详解
   
@@ -36,6 +37,7 @@ iRpc为一款基于Nio通信实现的轻量级高性能rpc框架,支持单机及
 iRpcServer:
   serverPort: 10916
   heartbeat: 60 # iRpc服务端检测iRpc客户端连接状态的最大心跳周期。
+  nodeName: n0
   ClusterNode: #如果使用单机，则不配置该项,node从n1开始，n0属于localhost
     - node: n0
       ip: 127.0.0.1
@@ -58,7 +60,8 @@ iRpcServer:
 |------------- |----------|
 | 		ClientStarter()	   |	默认加载配置文件名为"application.yml"的配置文件，加载位置默认为resources目录下  |
 | 		ClientStarter(String pathName)	   |	指定配置yml文件名称,格式为xxx.yml  | 
-| 		...	   |	动态指定配置信息--待开发  | 
+| 		 ClientStarter(IRpcClientProperty property)	   |	通过javaBean实例化配置信息启动客户端  | 
+| 		...	   |	带扩展  | 
 
 - 配置参数详解
 
@@ -111,12 +114,12 @@ iRpc发行版本已同步到maven中央仓库，因此根据项目实际情况�
 <dependency>
   <groupId>io.github.brianapple</groupId>
   <artifactId>iRpc</artifactId>
-  <version>1.0.2-Release</version>
+  <version>2.0.1-Release</version>
 </dependency>
 ```
-
-1.0.2.Release 修复了1.0.1及之前版本，客户端无法正常启动的异常。
-
+#### 版本
+- 1.0.2.Release 修复了1.0.1及之前版本，客户端无法正常启动的异常。
+- 2.0.1支持集群动态扩展，支持配置信息通过javaBean方式配置
 #### 客户端demo
 
 ```
