@@ -20,6 +20,7 @@ package iRpc.vote;
 import com.alibaba.fastjson.JSON;
 import iRpc.base.concurrent.ThreadFactoryImpl;
 import iRpc.base.messageDeal.MessageSender;
+import iRpc.cache.CommonLocalCache;
 import iRpc.dataBridge.vote.*;
 import iRpc.socketAware.RemoteClient;
 import iRpc.util.CommonUtil;
@@ -637,8 +638,10 @@ public class DLedgerLeaderElector {
     	iRpc.base.concurrent.ClusterExecutors.executorService.execute(new Runnable() {
             @Override
             public void run() {
-                new RemoteClient().start(ip,Integer.parseInt(port),String.format("%s:%s",ip,port));
-
+            	String channelName = String.format("%s:%s",ip,port);
+            	if(CommonLocalCache.ChannelCache.getChannel(channelName)== null){
+            		new RemoteClient().start(ip,Integer.parseInt(port),channelName);
+            	}
             }
         });
     }
