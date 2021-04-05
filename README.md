@@ -23,6 +23,7 @@ iRpc为一款基于Nio通信实现的轻量级高性能rpc框架,支持单机及
   | 		iRpcServer   | iRpc服务端配置信息	  |
   | 		serverPort	   |	服务端监听端口  |
   | 		heartbeat	   |	服务端监测客户端心跳周期-暂未使用  |
+  | 		nodeName	   |	当前服务节点名称，为ClusterNode-node值  |
   | 		ClusterNode   |	 leader-flower集群模式节点信息，集群模式下多个节点的ClusterNode信息一样 |
   | 		node   |	节点名称(建议使用：n0-nx，沿用的是dleger的模式)，  |
   | 		ip   |	iRpcServer节点ip地址（或域名）  |
