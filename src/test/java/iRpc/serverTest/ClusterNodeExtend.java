@@ -23,6 +23,7 @@ public class ClusterNodeExtend {
 		IRpcServerProperty serverProperty = new IRpcServerProperty();
 		serverProperty.setServerPort("10916");
 		serverProperty.setHeartbeat("60");
+		serverProperty.setNodeName("n0");
 		serverProperty.setGroupName("iRpcGroup");
 		List<NodeInfo> lits = new ArrayList<NodeInfo>();
 		NodeInfo node1 = new NodeInfo();
@@ -50,6 +51,7 @@ public class ClusterNodeExtend {
 		IRpcServerProperty serverProperty = new IRpcServerProperty();
 		serverProperty.setServerPort("10917");
 		serverProperty.setHeartbeat("60");
+		serverProperty.setNodeName("n1");
 		serverProperty.setGroupName("iRpcGroup");
 		List<NodeInfo> lits = new ArrayList<NodeInfo>();
 		NodeInfo node1 = new NodeInfo();
@@ -77,6 +79,7 @@ public class ClusterNodeExtend {
 		IRpcServerProperty serverProperty = new IRpcServerProperty();
 		serverProperty.setServerPort("10918");
 		serverProperty.setHeartbeat("60");
+		serverProperty.setNodeName("n2");
 		serverProperty.setGroupName("iRpcGroup");
 		List<NodeInfo> lits = new ArrayList<NodeInfo>();
 		NodeInfo node1 = new NodeInfo();

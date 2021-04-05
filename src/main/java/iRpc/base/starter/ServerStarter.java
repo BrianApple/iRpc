@@ -24,8 +24,9 @@ import java.util.Map;
  */
 public class ServerStarter implements Istarter{
     Logger logger = LoggerFactory.getLogger("serverStarter");
-
+    
     private String pathName;
+    private Thread iRpcServerThread = null;
     public ServerStarter() {
         pathName = IRpcContext.PropertyName;
         IRpcContext.yumInfo.put("iRpcServer",YamlUtil.getTypePropertieMap(pathName).get("iRpcServer"));
@@ -71,13 +72,15 @@ public class ServerStarter implements Istarter{
         if(serverMap != null ){
             String serverPort  = String.valueOf( serverMap.get("serverPort"));
             String heartbeat= String.valueOf(serverMap.get("heartbeat"));
+            String nodeName= String.valueOf(serverMap.get("nodeName"));
+
             String groupName= String.valueOf(serverMap.get("groupName"));
 
             //            String nodeIp = (String) m.get("ip");
 //            String nodePort = (String) m.get("port");
 
 
-            new Thread(new Runnable() {
+            iRpcServerThread = new Thread(new Runnable() {
                 @Override
                 public void run() {
                     try {
@@ -87,26 +90,25 @@ public class ServerStarter implements Istarter{
                         e.printStackTrace();
                     }
                 }
-            },String.format("iRpc_server:%s",serverPort)).start();
+            },String.format("iRpc_server:%s",serverPort));
+            iRpcServerThread.start();
             /**
              * 集群相关节点--涉及节点选举等操作
              */
             if(serverMap.containsKey("ClusterNode")){
                 DLedgerConfig config = new DLedgerConfig();
                 config.setGroup(groupName);
+                config.setSelfId(nodeName);
                 //初始化选举器
                 @SuppressWarnings("unchecked")
 				List<Map<String,Object>> lists = (List<Map<String, Object>>)serverMap.get("ClusterNode");
                 StringBuffer sb = new StringBuffer();
                 for (Map<String,Object> nodeInfo
                      : lists) {
-                    String nodeName = (String) nodeInfo.get("node");
+                    String curNodeName = (String) nodeInfo.get("node");
                     String ip = (String) nodeInfo.get("ip");
                     String port = String.valueOf(nodeInfo.get("port"));
-                    if(serverPort.equals(port)){
-                        config.setSelfId(nodeName);
-                    }
-                    sb.append(String.format("%s-%s:%s;",nodeName,ip,port));
+                    sb.append(String.format("%s-%s:%s;",curNodeName,ip,port));
                     ClusterExecutors.executorService.execute(new Runnable() {
                         @Override
                         public void run() {
@@ -114,21 +116,20 @@ public class ServerStarter implements Istarter{
 
                         }
                     });
-
                 }
                 logger.info("cluster peers info {}" , sb.substring(0,sb.length()-1));
                 config.setPeers(sb.substring(0,sb.length()-1));
                 initLeaderElector(config);
 
             }
-
-
         }
         return true;
     }
 
     @Override
     public boolean stop() {
-        return false;
+    	ClusterExecutors.executorService.shutdownNow();
+    	iRpcServerThread.interrupt();
+        return true;
     }
 }

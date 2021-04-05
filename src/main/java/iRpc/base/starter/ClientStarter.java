@@ -29,6 +29,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class ClientStarter implements Istarter{
     private String pathName;
+    private List<Thread> clientThreadPool = new ArrayList<Thread>();//all iRpc client thread collection
     public ClientStarter() {
         pathName = IRpcContext.PropertyName;
         IRpcContext.yumInfo.put("iRpcClient", YamlUtil.getTypePropertieMap(pathName).get("iRpcClient"));
@@ -74,7 +75,7 @@ public class ClientStarter implements Istarter{
 
                             String ip = (String) node.get("ip");
                             String port = String.valueOf( node.get("port"));
-                            new Thread(new Runnable() {
+                            Thread clientThread = new Thread(new Runnable() {
                                 @Override
                                 public void run() {
                                     for (int i = 0 ; i < retryTimes ; i ++){
@@ -92,7 +93,9 @@ public class ClientStarter implements Istarter{
                                         return;
                                     }
                                 }
-                            },String.format("Client4%s:%s",ip,port)).start();
+                            },String.format("Client4%s:%s",ip,port));
+                            clientThreadPool.add(clientThread);
+                            clientThread.start();
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -108,7 +111,10 @@ public class ClientStarter implements Istarter{
 
     @Override
     public boolean stop() {
-        return false;
+    	for (Thread thread : clientThreadPool) {
+			thread.interrupt();
+		}
+        return true;
     }
 
 
