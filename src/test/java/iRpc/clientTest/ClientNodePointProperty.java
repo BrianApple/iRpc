@@ -89,4 +89,5 @@ public class ClientNodePointProperty {
 
         System.out.println("客户端同步获取集群信息："+ JSON.toJSONString(ret)+" 执行时间："+ (System.currentTimeMillis()- Long.parseLong(ret.getResponseNum())));
     }
+
 }
