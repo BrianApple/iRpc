@@ -238,13 +238,13 @@ public class DLedgerLeaderElector {
                                 break;
                             case REJECT_ALREADY_VOTED:
                                 break;
-                            case REJECT_ALREADY__HAS_LEADER:
+                            case REJECT_ALREADY_HAS_LEADER:
                                 String peers = x.getPeers();
                                 String leaderId = x.getLeaderId();
                                 //同步peers并与新node建立网络连接
                                 boolean hasNewNode = addPeersNode(peers);//
                                 if(!hasNewNode){
-                                    //当为扩容peers时，等待leader心跳
+                                    //当为不为扩容peers时，等待leader心跳
                                     alreadyHasLeader.compareAndSet(false, true);
                                 }
                                 //re_vote
@@ -588,7 +588,7 @@ public class DLedgerLeaderElector {
             		logger.warn("[BUG] [HandleVote] remoteId={} is an unknown member", request.getLeaderId());
                     return CompletableFuture.completedFuture(new VoteResponse(request).term(memberState.currTerm()).voteResult(VoteResponse.RESULT.REJECT_UNKNOWN_LEADER));
             	}else{
-            		//n0-localhost:10916
+            		//n0-localhost:10916  update the local peers value
             		memberState.getPeerMap().put(request.getLeaderId(), String.format("%s:%s",request.getLocalIP(),request.getLocalPort()));
             		String newPeers = this.dLedgerConfig.getPeers()+
             				String.format(";%s-%s:%s", request.getLeaderId(),request.getLocalIP(),request.getLocalPort());
@@ -600,7 +600,7 @@ public class DLedgerLeaderElector {
                                 .leaderId(memberState.getLeaderId())//告诉节点当前集群leaderid值
                                 .peers(memberState.dLedgerConfig.getPeers())//当前集群中的所有节点
                                 .term(memberState.currTerm())
-                                .voteResult(VoteResponse.RESULT.REJECT_ALREADY__HAS_LEADER));
+                                .voteResult(VoteResponse.RESULT.REJECT_ALREADY_HAS_LEADER));
                     }
             		// vote new leader
             		return CompletableFuture.completedFuture(new VoteResponse(request).term(memberState.currTerm()).voteResult(VoteResponse.RESULT.MEMBER_ADDED_VOTE_NEXT));
@@ -623,7 +623,7 @@ public class DLedgerLeaderElector {
                 } else {
                     if (memberState.getLeaderId() != null) {
                         // 如果该节点已存在的Leader节点，则拒绝并告知已存在Leader节点
-                        return CompletableFuture.completedFuture(new VoteResponse(request).term(memberState.currTerm()).voteResult(VoteResponse.RESULT.REJECT_ALREADY__HAS_LEADER));
+                        return CompletableFuture.completedFuture(new VoteResponse(request).term(memberState.currTerm()).voteResult(VoteResponse.RESULT.REJECT_ALREADY_HAS_LEADER));
                     } else {
                         // 如果该节点还未有Leader节点，但已经投了其他节点的票，则拒绝请求节点，并告知已投票
                         return CompletableFuture.completedFuture(new VoteResponse(request).term(memberState.currTerm()).voteResult(VoteResponse.RESULT.REJECT_ALREADY_VOTED));
@@ -652,6 +652,7 @@ public class DLedgerLeaderElector {
             @Override
             public void run() {
             	String channelName = String.format("%s:%s",ip,port);
+//            	System.err.println("连接到:"+channelName);
             	if(CommonLocalCache.ChannelCache.getChannel(channelName)== null){
             		new RemoteClient().start(ip,Integer.parseInt(port),channelName);
             	}
@@ -680,12 +681,12 @@ public class DLedgerLeaderElector {
                     continue;//如果存在同名则忽略
                 }else{
                     //更新本地peers
+                    String[] ipPort = nodeIPPort.split("\\:");
+                    startClusterInnerClient(ipPort[0], ipPort[1]);
                     memberState.getPeerMap().put(nodeName,nodeIPPort);//"%s:%s"
                     String newPeers = this.dLedgerConfig.getPeers()+";"+peerNode;
                            // String.format(";%s-%s:%s", request.getLeaderId(),request.getLocalIP(),request.getLocalPort());
                     this.dLedgerConfig.setPeers(newPeers);
-                    String[] ipPort = nodeIPPort.split("\\:");
-                    startClusterInnerClient(ipPort[0], ipPort[1]);
                     newNodeADD = true;
                 }
             }
