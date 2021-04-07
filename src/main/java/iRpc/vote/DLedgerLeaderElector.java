@@ -225,10 +225,16 @@ public class DLedgerLeaderElector {
                         logger.error("vote failed ",ex);
                         return;
                     }
+                    
                     logger.debug("[{}][投票回调执行] {}", memberState.getSelfId(), JSON.toJSONString(x));
+                    boolean hasNewNode = false;
                     if (x.getVoteResult() != VoteResponse.RESULT.UNKNOWN) {
                         /**如果投票结果不是UNKNOW，则有效投票数量增1**/
                         validNum.incrementAndGet();
+                        String peers = x.getPeers();
+                        String leaderId = x.getLeaderId();
+                        //同步peers并与新node建立网络连接
+                        hasNewNode = addPeersNode(peers);
                     }
                     synchronized (knownMaxTermInGroup) {
                         switch (x.getVoteResult()) {
@@ -239,13 +245,12 @@ public class DLedgerLeaderElector {
                             case REJECT_ALREADY_VOTED:
                                 break;
                             case REJECT_ALREADY_HAS_LEADER:
-                                String peers = x.getPeers();
-                                String leaderId = x.getLeaderId();
-                                //同步peers并与新node建立网络连接
-                                boolean hasNewNode = addPeersNode(peers);//
+                            	//当为不为扩容peers时，等待leader心跳
                                 if(!hasNewNode){
-                                    //当为不为扩容peers时，等待leader心跳
+                                	System.err.println("停止选举，已经存在leader:"+x.getLeaderId());
                                     alreadyHasLeader.compareAndSet(false, true);
+                                }else{
+                                	
                                 }
                                 //re_vote
                                 break;
@@ -579,6 +584,7 @@ public class DLedgerLeaderElector {
      */
     public CompletableFuture<VoteResponse> handleVote(VoteRequest request, boolean self) {
         //hold the lock to get the latest term, leaderId, ledgerEndIndex
+    	System.err.println("收到投票请求:"+JSON.toJSONString(request));
         synchronized (memberState) {
             if (!memberState.isPeerMember(request.getLeaderId())) {
             	if(!memberState.isSameGroup(request.getGroup()) 
@@ -603,17 +609,26 @@ public class DLedgerLeaderElector {
                                 .voteResult(VoteResponse.RESULT.REJECT_ALREADY_HAS_LEADER));
                     }
             		// vote new leader
-            		return CompletableFuture.completedFuture(new VoteResponse(request).term(memberState.currTerm()).voteResult(VoteResponse.RESULT.MEMBER_ADDED_VOTE_NEXT));
+            		return CompletableFuture.completedFuture(new VoteResponse(request)
+            				.leaderId(memberState.getLeaderId())
+                            .peers(memberState.dLedgerConfig.getPeers())
+            				.term(memberState.currTerm()).voteResult(VoteResponse.RESULT.MEMBER_ADDED_VOTE_NEXT));
             	}
                 
             }
             if (!self && memberState.getSelfId().equals(request.getLeaderId())) {
                 logger.warn("[BUG] [HandleVote] selfId={} but remoteId={}", memberState.getSelfId(), request.getLeaderId());
-                return CompletableFuture.completedFuture(new VoteResponse(request).term(memberState.currTerm()).voteResult(VoteResponse.RESULT.REJECT_UNEXPECTED_LEADER));
+                return CompletableFuture.completedFuture(new VoteResponse(request)
+                		.leaderId(memberState.getLeaderId())
+                        .peers(memberState.dLedgerConfig.getPeers())
+                		.term(memberState.currTerm()).voteResult(VoteResponse.RESULT.REJECT_UNEXPECTED_LEADER));
             }
 
             if (request.getTerm() < memberState.currTerm()) {
-                return CompletableFuture.completedFuture(new VoteResponse(request).term(memberState.currTerm()).voteResult(VoteResponse.RESULT.REJECT_EXPIRED_VOTE_TERM));
+                return CompletableFuture.completedFuture(new VoteResponse(request)
+                		.leaderId(memberState.getLeaderId())
+                        .peers(memberState.dLedgerConfig.getPeers())
+                		.term(memberState.currTerm()).voteResult(VoteResponse.RESULT.REJECT_EXPIRED_VOTE_TERM));
             } else if (request.getTerm() == memberState.currTerm()) {
                 // 如果两者的Term相等，说明两者都处在同一个投票轮次中，地位平等
                 if (memberState.currVoteFor() == null) {
@@ -623,10 +638,16 @@ public class DLedgerLeaderElector {
                 } else {
                     if (memberState.getLeaderId() != null) {
                         // 如果该节点已存在的Leader节点，则拒绝并告知已存在Leader节点
-                        return CompletableFuture.completedFuture(new VoteResponse(request).term(memberState.currTerm()).voteResult(VoteResponse.RESULT.REJECT_ALREADY_HAS_LEADER));
+                        return CompletableFuture.completedFuture(new VoteResponse(request)
+                        		.leaderId(memberState.getLeaderId())
+                                .peers(memberState.dLedgerConfig.getPeers())
+                        		.term(memberState.currTerm()).voteResult(VoteResponse.RESULT.REJECT_ALREADY_HAS_LEADER));
                     } else {
                         // 如果该节点还未有Leader节点，但已经投了其他节点的票，则拒绝请求节点，并告知已投票
-                        return CompletableFuture.completedFuture(new VoteResponse(request).term(memberState.currTerm()).voteResult(VoteResponse.RESULT.REJECT_ALREADY_VOTED));
+                        return CompletableFuture.completedFuture(new VoteResponse(request)
+                        		.leaderId(memberState.getLeaderId())
+                                .peers(memberState.dLedgerConfig.getPeers())
+                        		.term(memberState.currTerm()).voteResult(VoteResponse.RESULT.REJECT_ALREADY_VOTED));
                     }
                 }
             } else {
@@ -635,15 +656,21 @@ public class DLedgerLeaderElector {
                 changeRoleToCandidate(request.getTerm());
                 needIncreaseTermImmediately = true;
                 //only can handleVote when the term is consistent
-                return CompletableFuture.completedFuture(new VoteResponse(request).term(memberState.currTerm()).voteResult(VoteResponse.RESULT.REJECT_TERM_NOT_READY));
+                return CompletableFuture.completedFuture(new VoteResponse(request)
+                		.leaderId(memberState.getLeaderId())
+                        .peers(memberState.dLedgerConfig.getPeers())
+                		.term(memberState.currTerm()).voteResult(VoteResponse.RESULT.REJECT_TERM_NOT_READY));
             }
 
             memberState.setCurrVoteFor(request.getLeaderId());
-            return CompletableFuture.completedFuture(new VoteResponse(request).term(memberState.currTerm()).voteResult(VoteResponse.RESULT.ACCEPT));
+            return CompletableFuture.completedFuture(new VoteResponse(request)
+            		.leaderId(memberState.getLeaderId())
+                    .peers(memberState.dLedgerConfig.getPeers())
+            		.term(memberState.currTerm()).voteResult(VoteResponse.RESULT.ACCEPT));
         }
     }
     /**
-     * connect to the cluster node
+     * connect to the cluster node,if channel exist,do not connect
      * @param ip
      * @param port
      */
@@ -677,12 +704,12 @@ public class DLedgerLeaderElector {
                 String[] infos =  peerNode.split("-");
                 String nodeName = infos[0];
                 String nodeIPPort = infos[1];
+                String[] ipPort = nodeIPPort.split("\\:");
+                startClusterInnerClient(ipPort[0], ipPort[1]);
                 if(memberState.getPeerMap().containsKey(nodeName)){
                     continue;//如果存在同名则忽略
                 }else{
                     //更新本地peers
-                    String[] ipPort = nodeIPPort.split("\\:");
-                    startClusterInnerClient(ipPort[0], ipPort[1]);
                     memberState.getPeerMap().put(nodeName,nodeIPPort);//"%s:%s"
                     String newPeers = this.dLedgerConfig.getPeers()+";"+peerNode;
                            // String.format(";%s-%s:%s", request.getLeaderId(),request.getLocalIP(),request.getLocalPort());

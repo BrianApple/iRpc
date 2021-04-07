@@ -9,13 +9,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @Description 网络分裂测试--模拟AB + AC -> ABC iRpc支持
+ * @Description 网络分裂测试--模拟AC + AB + C -> ABC iRpc暂不支持
  * @Author yangcheng
  * @Date 2021/4/6
  */
-public class ClusterNodeExtendDivision {
+public class ClusterNodeExtendDivision3 {
     /**
-     * AB
+     * AC
      */
     @Test
     public void startCluster1_Node1(){
@@ -33,7 +33,7 @@ public class ClusterNodeExtendDivision {
         NodeInfo node2 = new NodeInfo();
         node2.setNode("n1");
         node2.setIp("127.0.0.1");
-        node2.setPort("10917");
+        node2.setPort("10918");
         lits.add(node2);
         serverProperty.setClusterNode(lits);;
 
@@ -78,7 +78,7 @@ public class ClusterNodeExtendDivision {
         }
     }
     /**
-     * AC
+     * C
      */
     @Test
     public void startCluster1_Node3(){
@@ -88,11 +88,6 @@ public class ClusterNodeExtendDivision {
         serverProperty.setNodeName("n2");
         serverProperty.setGroupName("iRpcGroup");
         List<NodeInfo> lits = new ArrayList<NodeInfo>();
-        NodeInfo node1 = new NodeInfo();
-        node1.setNode("n1");
-        node1.setIp("127.0.0.1");
-        node1.setPort("10917");
-        lits.add(node1);
         NodeInfo node2 = new NodeInfo();
         node2.setNode("n2");
         node2.setIp("127.0.0.1");

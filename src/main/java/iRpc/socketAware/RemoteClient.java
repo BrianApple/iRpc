@@ -104,9 +104,11 @@ public class RemoteClient {
 		}else{
 			//inner cluster node
 			while(true){
-				if(CommonLocalCache.ChannelCache.getChannel(channelName)!= null){
+				Channel channel= CommonLocalCache.ChannelCache.getChannel(channelName);
+				if(channel != null && channel.isWritable()){
             		break;
             	}
+				System.err.println(Thread.currentThread().getName()+"_连接到cluster node:"+ip+":"+port);
 				ChannelFuture channelFuture = singleBootstrap.connect(ip, port).awaitUninterruptibly();
 				if(channelFuture.isSuccess()){
 					logger.info("cluster node {} connected success",String.format("%s:%s",ip,port));

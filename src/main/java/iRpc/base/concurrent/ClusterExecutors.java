@@ -15,8 +15,8 @@ public class ClusterExecutors {
     public static ExecutorService executorService = null;
     public static ExecutorService baseMsgExecutor = null;//
     static{
-        executorService = Executors.newFixedThreadPool(108,new ThreadFactoryImpl("messageSendSyn_",false));
-        baseMsgExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(),new ThreadFactoryImpl("messageSendSyn_",false));
+        executorService = Executors.newFixedThreadPool(108,new ThreadFactoryImpl("remoteClient4InnerNode_",false));
+        baseMsgExecutor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(),new ThreadFactoryImpl("baseMsgExecutor_",false));
     }
     
     
