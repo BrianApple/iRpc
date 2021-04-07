@@ -9,15 +9,18 @@ import iRpc.base.starter.ServerStarter;
 import iRpc.dataBridge.property.IRpcServerProperty;
 import iRpc.dataBridge.property.NodeInfo;
 /**
- * node1 和 node2为集群iRpcGroup，startNode3为iRpcGroup中动态新增节点
+ * 集群扩展测试 node1 和 node2为集群iRpcGroup，startNode3为iRpcGroup中动态新增节点
  * <p>Description: </p>
  * <p>Copyright: Copyright (c) 2019</p>
- * <p>Company: www.uiotcp.com</p>
+ * <p>Company: www.uiotp.com</p>
  * @author yangcheng hejuanjuan
  * @date 2021年4月3日
  * @version 1.0
  */
 public class ClusterNodeExtend {
+	/**
+	 * AB
+	 */
 	@Test
 	public void startNode1(){
 		IRpcServerProperty serverProperty = new IRpcServerProperty();
@@ -46,6 +49,9 @@ public class ClusterNodeExtend {
 			e.printStackTrace();
 		}
 	}
+	/**
+	 * AB
+	 */
 	@Test
 	public void startNode2(){
 		IRpcServerProperty serverProperty = new IRpcServerProperty();
@@ -74,6 +80,10 @@ public class ClusterNodeExtend {
 			e.printStackTrace();
 		}
 	}
+
+	/**
+	 * ABC
+	 */
 	@Test
 	public void startNode3(){
 		IRpcServerProperty serverProperty = new IRpcServerProperty();

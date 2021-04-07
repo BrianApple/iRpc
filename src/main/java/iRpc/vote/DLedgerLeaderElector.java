@@ -239,7 +239,15 @@ public class DLedgerLeaderElector {
                             case REJECT_ALREADY_VOTED:
                                 break;
                             case REJECT_ALREADY__HAS_LEADER:
-                                alreadyHasLeader.compareAndSet(false, true);
+                                String peers = x.getPeers();
+                                String leaderId = x.getLeaderId();
+                                //同步peers并与新node建立网络连接
+                                boolean hasNewNode = addPeersNode(peers);//
+                                if(!hasNewNode){
+                                    //当为扩容peers时，等待leader心跳
+                                    alreadyHasLeader.compareAndSet(false, true);
+                                }
+                                //re_vote
                                 break;
                             case REJECT_TERM_SMALL_THAN_LEDGER:
                             case REJECT_EXPIRED_VOTE_TERM:
@@ -297,7 +305,8 @@ public class DLedgerLeaderElector {
             nextTimeToRequestVote = getNextTimeToRequestVote();
             changeRoleToCandidate(knownMaxTermInGroup.get());
         } else if (alreadyHasLeader.get()) {
-            // 如果已经存在Leader，该节点重新进入到Candidate，并重置定时器
+            // 已经存在Leader，重新进入到Candidate--
+
             parseResult = WAIT_TO_VOTE_NEXT;
             nextTimeToRequestVote = getNextTimeToRequestVote() + heartBeatTimeIntervalMs * maxHeartBeatLeak;
         } else if (!memberState.isQuorum(validNum.get())) {
@@ -587,7 +596,11 @@ public class DLedgerLeaderElector {
             		startClusterInnerClient(request.getLocalIP(),request.getLocalPort());
             		if (memberState.getLeaderId() != null) {
             			//use the old leader 
-                        return CompletableFuture.completedFuture(new VoteResponse(request).term(memberState.currTerm()).voteResult(VoteResponse.RESULT.REJECT_ALREADY__HAS_LEADER));
+                        return CompletableFuture.completedFuture(new VoteResponse(request)
+                                .leaderId(memberState.getLeaderId())//告诉节点当前集群leaderid值
+                                .peers(memberState.dLedgerConfig.getPeers())//当前集群中的所有节点
+                                .term(memberState.currTerm())
+                                .voteResult(VoteResponse.RESULT.REJECT_ALREADY__HAS_LEADER));
                     }
             		// vote new leader
             		return CompletableFuture.completedFuture(new VoteResponse(request).term(memberState.currTerm()).voteResult(VoteResponse.RESULT.MEMBER_ADDED_VOTE_NEXT));
@@ -645,6 +658,41 @@ public class DLedgerLeaderElector {
             }
         });
     }
+
+    /**
+     *  扩充本地peers信息
+     * @param peers
+     * @return 存在新node（当前peers中不包含的node）时返回true
+     */
+    public boolean addPeersNode(String peers){
+        boolean newNodeADD = false;//默认没有新的节点扩充
+        if(peers == null || "".equals(peers)){
+                return newNodeADD;
+        }
+        String[] peerNodes = peers.split("\\;");
+        for (String peerNode:
+            peerNodes) {
+            if(!this.dLedgerConfig.getPeers().contains(peerNode)){
+                String[] infos =  peerNode.split("-");
+                String nodeName = infos[0];
+                String nodeIPPort = infos[1];
+                if(memberState.getPeerMap().containsKey(nodeName)){
+                    continue;//如果存在同名则忽略
+                }else{
+                    //更新本地peers
+                    memberState.getPeerMap().put(nodeName,nodeIPPort);//"%s:%s"
+                    String newPeers = this.dLedgerConfig.getPeers()+";"+peerNode;
+                           // String.format(";%s-%s:%s", request.getLeaderId(),request.getLocalIP(),request.getLocalPort());
+                    this.dLedgerConfig.setPeers(newPeers);
+                    String[] ipPort = nodeIPPort.split("\\:");
+                    startClusterInnerClient(ipPort[0], ipPort[1]);
+                    newNodeADD = true;
+                }
+            }
+        }
+        return newNodeADD;
+    }
+
 
     /**
      * 节点状态机类 

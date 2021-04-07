@@ -12,7 +12,7 @@ import iRpc.dataBridge.property.NodeInfo;
  * 
  * <p>Description: 不同的配置文件方式启动服务端 </p>
  * <p>Copyright: Copyright (c) 2019</p>
- * <p>Company: www.uiotcp.com</p>
+ * <p>Company: www.uiotp.com</p>
  * @author yangcheng
  * @date 2021年4月3日
  * @version 1.0
