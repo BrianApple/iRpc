@@ -9,11 +9,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @Description 网络分裂测试--模拟AB + AC -> ABC iRpc支持
+ * @Description 网络分裂测试--模拟AB + CD + ACE -> ABCDE， iRpc不支持
  * @Author yangcheng
  * @Date 2021/4/6
  */
-public class ClusterNodeExtendDivision {
+public class ClusterNodeExtendDivision2 {
     /**
      * AB
      */
@@ -78,14 +78,77 @@ public class ClusterNodeExtendDivision {
         }
     }
     /**
-     * AC
+     * CD
      */
     @Test
-    public void startCluster1_Node3(){
+    public void startCluster2_Node1(){
         IRpcServerProperty serverProperty = new IRpcServerProperty();
         serverProperty.setServerPort("10918");
         serverProperty.setHeartbeat("60");
         serverProperty.setNodeName("n2");
+        serverProperty.setGroupName("iRpcGroup");
+        List<NodeInfo> lits = new ArrayList<NodeInfo>();
+        NodeInfo node1 = new NodeInfo();
+        node1.setNode("n2");
+        node1.setIp("127.0.0.1");
+        node1.setPort("10918");
+        lits.add(node1);
+        NodeInfo node2 = new NodeInfo();
+        node2.setNode("n3");
+        node2.setIp("127.0.0.1");
+        node2.setPort("10919");
+        lits.add(node2);
+        serverProperty.setClusterNode(lits);;
+
+        new ServerStarter(serverProperty);
+        try {
+            Thread.sleep(Integer.MAX_VALUE);
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * CD
+     */
+    @Test
+    public void startCluster2_Node2(){
+        IRpcServerProperty serverProperty = new IRpcServerProperty();
+        serverProperty.setServerPort("10919");
+        serverProperty.setHeartbeat("60");
+        serverProperty.setNodeName("n3");
+        serverProperty.setGroupName("iRpcGroup");
+        List<NodeInfo> lits = new ArrayList<NodeInfo>();
+        NodeInfo node1 = new NodeInfo();
+        node1.setNode("n2");
+        node1.setIp("127.0.0.1");
+        node1.setPort("10918");
+        lits.add(node1);
+        NodeInfo node2 = new NodeInfo();
+        node2.setNode("n3");
+        node2.setIp("127.0.0.1");
+        node2.setPort("10919");
+        lits.add(node2);
+        serverProperty.setClusterNode(lits);;
+
+        new ServerStarter(serverProperty);
+        try {
+            Thread.sleep(Integer.MAX_VALUE);
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+    /**
+     * ACE -- fail to vote
+     */
+    @Test
+    public void startCluster1_2_Node5(){
+        IRpcServerProperty serverProperty = new IRpcServerProperty();
+        serverProperty.setServerPort("10920");
+        serverProperty.setHeartbeat("60");
+        serverProperty.setNodeName("n4");
         serverProperty.setGroupName("iRpcGroup");
         List<NodeInfo> lits = new ArrayList<NodeInfo>();
         NodeInfo node1 = new NodeInfo();
@@ -98,6 +161,11 @@ public class ClusterNodeExtendDivision {
         node2.setIp("127.0.0.1");
         node2.setPort("10918");
         lits.add(node2);
+        NodeInfo node3 = new NodeInfo();
+        node3.setNode("n4");
+        node3.setIp("127.0.0.1");
+        node3.setPort("10920");
+        lits.add(node3);
         serverProperty.setClusterNode(lits);;
 
         new ServerStarter(serverProperty);
