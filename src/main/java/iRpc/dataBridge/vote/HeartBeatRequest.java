@@ -17,14 +17,24 @@
 
 package iRpc.dataBridge.vote;
 
+import java.util.List;
+
 public class HeartBeatRequest extends RequestOrResponse {
     private String peers;
-
+    private List<String> reviveNode;//复活的node
     public String getPeers() {
         return peers;
     }
 
     public void setPeers(String peers) {
         this.peers = peers;
+    }
+
+    public List<String> getReviveNode() {
+        return reviveNode;
+    }
+
+    public void setReviveNode(List<String> reviveNode) {
+        this.reviveNode = reviveNode;
     }
 }

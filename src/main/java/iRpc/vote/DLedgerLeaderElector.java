@@ -403,6 +403,7 @@ public class DLedgerLeaderElector {
             heartBeatRequest.setRemoteId(id);
             heartBeatRequest.setPeers(memberState.dLedgerConfig.getPeers());
             heartBeatRequest.setLeaderId(leaderId);
+            heartBeatRequest.setReviveNode(getReviveNode());
             heartBeatRequest.setTerm(term);
             CompletableFuture<HeartBeatResponse> future = MessageSender.heartBeat(heartBeatRequest, memberState.getPeerMap().get(id));
             future.whenComplete((HeartBeatResponse x, Throwable ex) -> {
@@ -474,7 +475,14 @@ public class DLedgerLeaderElector {
      * @throws Exception
      */
     public CompletableFuture<HeartBeatResponse> handleHeartBeat(HeartBeatRequest request) throws Exception {
-
+        List<String> reviveNode = request.getReviveNode();
+        if(reviveNode != null){
+            int reviveSize = reviveNode.size();
+            for (int i = 0 ; i < reviveSize ;i ++){
+               String peer = reviveNode.get(i);
+                addPeersNode(peer);
+            }
+        }
         if (!memberState.isPeerMember(request.getLeaderId())) {
     		logger.warn("[BUG] [HandleHeartBeat] remoteId={} is an unknown member", request.getLeaderId());
     		return CompletableFuture.completedFuture(new HeartBeatResponse(request).term(memberState.currTerm()).code(DLedgerResponseCode.UNKNOWN_MEMBER.getCode()));
@@ -622,6 +630,7 @@ public class DLedgerLeaderElector {
                 		.term(memberState.currTerm()).voteResult(VoteResponse.RESULT.REJECT_EXPIRED_VOTE_TERM));
             } else if (request.getTerm() == memberState.currTerm()) {
                 // 如果两者的Term相等，说明两者都处在同一个投票轮次中，地位平等
+                isReviveAndCollectHim(String.format("%s-%s:%s", request.getLeaderId(),request.getLocalIP(),request.getLocalPort()));
                 if (memberState.currVoteFor() == null) {
                     //let it go
                 } else if (memberState.currVoteFor().equals(request.getLeaderId())) {
@@ -671,8 +680,16 @@ public class DLedgerLeaderElector {
         }
     }
 
-    public Object[] getReviveNode(){
-       return reviveNodeInfoQueue.toArray();
+    public List<String> getReviveNode(){
+        List<String> ret = new ArrayList<>();
+        while(true){
+            String ele = reviveNodeInfoQueue.poll();
+            if (ele == null){
+                break;
+            }
+            ret.add(ele);
+        }
+       return ret;
     }
 
     /**

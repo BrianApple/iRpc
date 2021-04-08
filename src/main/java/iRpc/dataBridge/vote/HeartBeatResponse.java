@@ -17,9 +17,11 @@
 
 package iRpc.dataBridge.vote;
 
+import java.util.List;
+
 public class HeartBeatResponse extends RequestOrResponse {
     private String peers;
-
+    private List<String> reviveNode;
     public HeartBeatResponse(HeartBeatRequest request){
         this.requestNum  = request.getRequestNum();
     }
@@ -40,5 +42,13 @@ public class HeartBeatResponse extends RequestOrResponse {
 
     public void setPeers(String peers) {
         this.peers = peers;
+    }
+
+    public List<String> getReviveNode() {
+        return reviveNode;
+    }
+
+    public void setReviveNode(List<String> reviveNode) {
+        this.reviveNode = reviveNode;
     }
 }
