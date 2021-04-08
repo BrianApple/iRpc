@@ -90,6 +90,8 @@ public class DLedgerLeaderElector {
     /**状态机管理器**/
     private StateMaintainer stateMaintainer = new StateMaintainer();
 
+    private ConcurrentLinkedQueue<String> reviveNodeInfoQueue = new ConcurrentLinkedQueue();
+
     private ExecutorService executorService = Executors.newFixedThreadPool(4,new ThreadFactoryImpl("dledgerLeaderElector_",false));
     public DLedgerLeaderElector(DLedgerConfig dLedgerConfig, MemberState memberState ) {
         this.dLedgerConfig = dLedgerConfig;
@@ -231,10 +233,6 @@ public class DLedgerLeaderElector {
                     if (x.getVoteResult() != VoteResponse.RESULT.UNKNOWN) {
                         /**如果投票结果不是UNKNOW，则有效投票数量增1**/
                         validNum.incrementAndGet();
-                        String peers = x.getPeers();
-                        String leaderId = x.getLeaderId();
-                        //同步peers并与新node建立网络连接
-                        hasNewNode = addPeersNode(peers);
                     }
                     synchronized (knownMaxTermInGroup) {
                         switch (x.getVoteResult()) {
@@ -245,14 +243,8 @@ public class DLedgerLeaderElector {
                             case REJECT_ALREADY_VOTED:
                                 break;
                             case REJECT_ALREADY_HAS_LEADER:
-                            	//当为不为扩容peers时，等待leader心跳
-                                if(!hasNewNode){
-                                	System.err.println("停止选举，已经存在leader:"+x.getLeaderId());
-                                    alreadyHasLeader.compareAndSet(false, true);
-                                }else{
-                                	
-                                }
-                                //re_vote
+                                System.err.println("停止选举，已经存在leader，等待heartbeat:"+x.getLeaderId());
+                                alreadyHasLeader.compareAndSet(false, true);
                                 break;
                             case REJECT_TERM_SMALL_THAN_LEDGER:
                             case REJECT_EXPIRED_VOTE_TERM:
@@ -607,14 +599,12 @@ public class DLedgerLeaderElector {
             			//use the old leader 
                         return CompletableFuture.completedFuture(new VoteResponse(request)
                                 .leaderId(memberState.getLeaderId())//告诉节点当前集群leaderid值
-                                .peers(memberState.dLedgerConfig.getPeers())//当前集群中的所有节点
                                 .term(memberState.currTerm())
                                 .voteResult(VoteResponse.RESULT.REJECT_ALREADY_HAS_LEADER));
                     }
             		// vote new leader
             		return CompletableFuture.completedFuture(new VoteResponse(request)
             				.leaderId(memberState.getLeaderId())
-                            .peers(memberState.dLedgerConfig.getPeers())
             				.term(memberState.currTerm()).voteResult(VoteResponse.RESULT.MEMBER_ADDED_VOTE_NEXT));
             	}
                 
@@ -623,14 +613,12 @@ public class DLedgerLeaderElector {
                 logger.warn("[BUG] [HandleVote] selfId={} but remoteId={}", memberState.getSelfId(), request.getLeaderId());
                 return CompletableFuture.completedFuture(new VoteResponse(request)
                 		.leaderId(memberState.getLeaderId())
-                        .peers(memberState.dLedgerConfig.getPeers())
                 		.term(memberState.currTerm()).voteResult(VoteResponse.RESULT.REJECT_UNEXPECTED_LEADER));
             }
 
             if (request.getTerm() < memberState.currTerm()) {
                 return CompletableFuture.completedFuture(new VoteResponse(request)
                 		.leaderId(memberState.getLeaderId())
-                        .peers(memberState.dLedgerConfig.getPeers())
                 		.term(memberState.currTerm()).voteResult(VoteResponse.RESULT.REJECT_EXPIRED_VOTE_TERM));
             } else if (request.getTerm() == memberState.currTerm()) {
                 // 如果两者的Term相等，说明两者都处在同一个投票轮次中，地位平等
@@ -639,17 +627,16 @@ public class DLedgerLeaderElector {
                 } else if (memberState.currVoteFor().equals(request.getLeaderId())) {
                     // 已经投票给当前节点
                 } else {
+//                    addPeersNode(String.format("%s-%s:%s", request.getLeaderId(),request.getLocalIP(),request.getLocalPort()));
                     if (memberState.getLeaderId() != null) {
                         // 如果该节点已存在的Leader节点，则拒绝并告知已存在Leader节点
                         return CompletableFuture.completedFuture(new VoteResponse(request)
                         		.leaderId(memberState.getLeaderId())
-                                .peers(memberState.dLedgerConfig.getPeers())
                         		.term(memberState.currTerm()).voteResult(VoteResponse.RESULT.REJECT_ALREADY_HAS_LEADER));
                     } else {
                         // 如果该节点还未有Leader节点，但已经投了其他节点的票，则拒绝请求节点，并告知已投票
                         return CompletableFuture.completedFuture(new VoteResponse(request)
                         		.leaderId(memberState.getLeaderId())
-                                .peers(memberState.dLedgerConfig.getPeers())
                         		.term(memberState.currTerm()).voteResult(VoteResponse.RESULT.REJECT_ALREADY_VOTED));
                     }
                 }
@@ -661,17 +648,33 @@ public class DLedgerLeaderElector {
                 //only can handleVote when the term is consistent
                 return CompletableFuture.completedFuture(new VoteResponse(request)
                 		.leaderId(memberState.getLeaderId())
-                        .peers(memberState.dLedgerConfig.getPeers())
                 		.term(memberState.currTerm()).voteResult(VoteResponse.RESULT.REJECT_TERM_NOT_READY));
             }
 
             memberState.setCurrVoteFor(request.getLeaderId());
             return CompletableFuture.completedFuture(new VoteResponse(request)
             		.leaderId(memberState.getLeaderId())
-                    .peers(memberState.dLedgerConfig.getPeers())
             		.term(memberState.currTerm()).voteResult(VoteResponse.RESULT.ACCEPT));
         }
     }
+
+    /**
+     *  收集复活的node
+     * @param peer  "n0-ip:port"
+     * @return
+     */
+    public void isReviveAndCollectHim(String peer){
+        String[] nodeInfos = peer.split("-");
+        if(CommonLocalCache.ChannelCache.getChannel(nodeInfos[1]) == null
+                || !CommonLocalCache.ChannelCache.getChannel(nodeInfos[1]).isWritable()){
+            reviveNodeInfoQueue.add(peer);
+        }
+    }
+
+    public Object[] getReviveNode(){
+       return reviveNodeInfoQueue.toArray();
+    }
+
     /**
      * connect to the cluster node,if channel exist,do not connect
      * @param ip
@@ -682,10 +685,12 @@ public class DLedgerLeaderElector {
             @Override
             public void run() {
             	String channelName = String.format("%s:%s",ip,port);
-//            	System.err.println("连接到:"+channelName);
-            	if(CommonLocalCache.ChannelCache.getChannel(channelName)== null){
+            	if(CommonLocalCache.ChannelCache.getChannel(channelName) == null
+                        || !CommonLocalCache.ChannelCache.getChannel(channelName).isWritable()){
             	    synchronized (RemoteClient.class){
-                        if(CommonLocalCache.ChannelCache.getChannel(channelName)== null){
+                        if(CommonLocalCache.ChannelCache.getChannel(channelName)== null
+                                || !CommonLocalCache.ChannelCache.getChannel(channelName).isWritable()){
+                            System.err.println("连接到:"+channelName);
                             new RemoteClient().start(ip,Integer.parseInt(port),channelName);
                         }
                     }
@@ -696,33 +701,32 @@ public class DLedgerLeaderElector {
 
     /**
      *  扩充本地peers信息
-     * @param peers
+     * @param peers 新增的节点信息
      * @return 存在新node（当前peers中不包含的node）时返回true
      */
     public boolean addPeersNode(String peers){
         boolean newNodeADD = false;//默认没有新的节点扩充
         if(peers == null || "".equals(peers)){
-                return newNodeADD;
+            return newNodeADD;
         }
         String[] peerNodes = peers.split("\\;");
-        for (String peerNode:
-            peerNodes) {
+        for (String peerNode:peerNodes) {
+            String[] infos =  peerNode.split("-");
+            String nodeName = infos[0];
+            String nodeIPPort = infos[1];
+            String[] ipPort = nodeIPPort.split("\\:");
+            startClusterInnerClient(ipPort[0], ipPort[1]);//wether is not in local peers,connect
             if(!this.dLedgerConfig.getPeers().contains(peerNode)){
-                String[] infos =  peerNode.split("-");
-                String nodeName = infos[0];
-                String nodeIPPort = infos[1];
-                String[] ipPort = nodeIPPort.split("\\:");
-                startClusterInnerClient(ipPort[0], ipPort[1]);
-                if(memberState.getPeerMap().containsKey(nodeName)){
-                    continue;//如果存在同名则忽略
-                }else{
+                String newPeers = this.dLedgerConfig.getPeers()+";"+peerNode;
+                // String.format(";%s-%s:%s", request.getLeaderId(),request.getLocalIP(),request.getLocalPort());
+                this.dLedgerConfig.setPeers(newPeers);
+                if(!memberState.getPeerMap().containsKey(nodeName)){
                     //更新本地peers
                     memberState.getPeerMap().put(nodeName,nodeIPPort);//"%s:%s"
-                    String newPeers = this.dLedgerConfig.getPeers()+";"+peerNode;
-                           // String.format(";%s-%s:%s", request.getLeaderId(),request.getLocalIP(),request.getLocalPort());
-                    this.dLedgerConfig.setPeers(newPeers);
-                    newNodeADD = true;
                 }
+                newNodeADD = true;
+            }else{
+                //exist
             }
         }
         return newNodeADD;

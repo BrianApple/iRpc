@@ -19,7 +19,7 @@ package iRpc.dataBridge.vote;
 
 public class VoteResponse extends RequestOrResponse {
 
-    private String peers;//when vote ret is "REJECT_ALREADY__HAS_LEADER",the peers is the current of cluster peers value
+//    private String peers;//when vote ret is "REJECT_ALREADY__HAS_LEADER",the peers is the current of cluster peers value
 
     public RESULT voteResult = RESULT.UNKNOWN;
 
@@ -85,14 +85,14 @@ public class VoteResponse extends RequestOrResponse {
         WAIT_TO_VOTE_NEXT;
     }
 
-    public VoteResponse peers(String peers){
-        this.peers = peers;
-        return this;
-    }
-
-    public String getPeers() {
-        return peers;
-    }
+//    public VoteResponse peers(String peers){
+//        this.peers = peers;
+//        return this;
+//    }
+//
+//    public String getPeers() {
+//        return peers;
+//    }
 
     public VoteResponse leaderId(String leaderId){
         this.leaderId = leaderId;

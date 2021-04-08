@@ -7,6 +7,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * @Description 网络分裂测试--模拟AC + AB + C -> ABC iRpc暂不支持
@@ -102,5 +103,16 @@ public class ClusterNodeExtendDivision3 {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
+    }
+
+
+    @Test
+    public void test(){
+        ConcurrentLinkedQueue<String> reviveNodeInfoQueue = new ConcurrentLinkedQueue<String> ();
+        for (int i = 0 ; i < 10 ; i ++){
+            reviveNodeInfoQueue.add("data");
+        }
+        Object[] arra = reviveNodeInfoQueue.toArray();
+        System.out.println(arra);
     }
 }

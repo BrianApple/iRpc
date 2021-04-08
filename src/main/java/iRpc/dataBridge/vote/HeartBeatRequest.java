@@ -18,7 +18,7 @@
 package iRpc.dataBridge.vote;
 
 public class HeartBeatRequest extends RequestOrResponse {
-    private String peers;//AB + AC -> ABC ,A is Leader,
+    private String peers;
 
     public String getPeers() {
         return peers;

@@ -129,6 +129,7 @@ public class ServerStarter implements Istarter{
     @Override
     public boolean stop() {
     	ClusterExecutors.executorService.shutdownNow();
+    	ClusterExecutors.baseMsgExecutor.shutdownNow();
     	iRpcServerThread.interrupt();
         return true;
     }
