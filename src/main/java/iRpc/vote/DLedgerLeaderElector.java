@@ -409,6 +409,7 @@ public class DLedgerLeaderElector {
             heartBeatRequest.setGroup(memberState.getGroup());
             heartBeatRequest.setLocalId(memberState.getSelfId());
             heartBeatRequest.setRemoteId(id);
+            heartBeatRequest.setPeers(memberState.dLedgerConfig.getPeers());
             heartBeatRequest.setLeaderId(leaderId);
             heartBeatRequest.setTerm(term);
             CompletableFuture<HeartBeatResponse> future = MessageSender.heartBeat(heartBeatRequest, memberState.getPeerMap().get(id));
@@ -503,6 +504,8 @@ public class DLedgerLeaderElector {
         } else if (request.getTerm() == memberState.currTerm()) {
             if (request.getLeaderId().equals(memberState.getLeaderId())) {
                 // ****如果投票轮次相同，并且发送心跳包的节点是该节点的主节点，则返回成功****
+                String leaderNodePeers = request.getPeers();
+                addPeersNode(leaderNodePeers);
                 lastLeaderHeartBeatTime = System.currentTimeMillis();
                 return CompletableFuture.completedFuture(new HeartBeatResponse(request));
             }
@@ -681,7 +684,11 @@ public class DLedgerLeaderElector {
             	String channelName = String.format("%s:%s",ip,port);
 //            	System.err.println("连接到:"+channelName);
             	if(CommonLocalCache.ChannelCache.getChannel(channelName)== null){
-            		new RemoteClient().start(ip,Integer.parseInt(port),channelName);
+            	    synchronized (RemoteClient.class){
+                        if(CommonLocalCache.ChannelCache.getChannel(channelName)== null){
+                            new RemoteClient().start(ip,Integer.parseInt(port),channelName);
+                        }
+                    }
             	}
             }
         });
