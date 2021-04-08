@@ -21,7 +21,11 @@ import java.util.List;
 
 public class HeartBeatRequest extends RequestOrResponse {
     private String peers;
-    private List<String> reviveNode;//复活的node
+    private List<String> reviveNode;
+    /**
+     * 新扩充的nodes信息
+     */
+    protected List<String> newNodePeers;
     public String getPeers() {
         return peers;
     }
@@ -30,11 +34,22 @@ public class HeartBeatRequest extends RequestOrResponse {
         this.peers = peers;
     }
 
-    public List<String> getReviveNode() {
-        return reviveNode;
-    }
+	public List<String> getReviveNode() {
+		return reviveNode;
+	}
 
-    public void setReviveNode(List<String> reviveNode) {
-        this.reviveNode = reviveNode;
-    }
+	public HeartBeatRequest setReviveNode(List<String> reviveNode) {
+		this.reviveNode = reviveNode;
+		return this;
+	}
+
+	public List<String> getNewNodePeers() {
+		return newNodePeers;
+	}
+
+	public HeartBeatRequest setNewNodePeers(List<String> newNodePeers) {
+		this.newNodePeers = newNodePeers;
+		return this;
+	}
+    
 }

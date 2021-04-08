@@ -61,6 +61,8 @@ public class RequestOrResponse implements IDataSend {
      */
     protected long term = -1;
 
+
+    
     public String getGroup() {
         return group;
     }

@@ -89,9 +89,9 @@ public class ClusterNodeExtendDivision {
         serverProperty.setGroupName("iRpcGroup");
         List<NodeInfo> lits = new ArrayList<NodeInfo>();
         NodeInfo node1 = new NodeInfo();
-        node1.setNode("n1");
+        node1.setNode("n0");
         node1.setIp("127.0.0.1");
-        node1.setPort("10917");
+        node1.setPort("10916");
         lits.add(node1);
         NodeInfo node2 = new NodeInfo();
         node2.setNode("n2");
