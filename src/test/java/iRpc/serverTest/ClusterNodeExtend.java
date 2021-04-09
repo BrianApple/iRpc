@@ -9,7 +9,7 @@ import iRpc.base.starter.ServerStarter;
 import iRpc.dataBridge.property.IRpcServerProperty;
 import iRpc.dataBridge.property.NodeInfo;
 /**
- * 集群扩展测试 node1 和 node2为集群iRpcGroup，startNode3为iRpcGroup中动态新增节点
+ * 集群扩展测试 AB +BA + ABC -> ABC  iRpc支持
  * <p>Description: </p>
  * <p>Copyright: Copyright (c) 2019</p>
  * <p>Company: www.uiotp.com</p>

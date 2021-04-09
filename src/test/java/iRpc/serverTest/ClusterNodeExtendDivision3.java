@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
- * @Description 网络分裂测试--模拟AC + AB + C -> ABC iRpc暂不支持
+ * @Description 网络分裂测试--模拟AC + AB + C -> ABC iRpc不支持
  * @Author yangcheng
  * @Date 2021/4/6
  */

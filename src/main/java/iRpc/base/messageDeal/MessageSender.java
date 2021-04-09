@@ -250,7 +250,6 @@ public class MessageSender implements IMessageSender {
      * @return
      */
     public static CompletableFuture<VoteResponse> vote(IDataSend sendData,String channelName){
-    	System.err.println("vote request to "+ channelName);
         CompletableFuture<VoteResponse> future = new CompletableFuture<>();
         boolean isSuc = asynMessaSend2Server(2, sendData, new IProcessor() {
             @Override

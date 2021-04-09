@@ -155,7 +155,6 @@ public class RemoteServer {
                             
                             break;
                         case HEART_MSG:
-                            logger.debug("服务端收到心跳消息：{}", JSON.toJSONString(recieveData.getData()));
                             DLedgerLeaderElector elector4h = (DLedgerLeaderElector) CommonLocalCache.BasicInfoCache.getProperty("elector");
                             HeartBeatRequest heartBeatRequest4h = (HeartBeatRequest) recieveData.getData();
                             CompletableFuture<HeartBeatResponse> heartBeatResponseCompletableFuture = elector4h.handleHeartBeat(heartBeatRequest4h);
@@ -176,7 +175,6 @@ public class RemoteServer {
                             });
                             break;
                         case VOTE_MMSG:
-                            logger.debug("服务端收到选举消息：{}", JSON.toJSONString(recieveData.getData()));
                             DLedgerLeaderElector elector4v = (DLedgerLeaderElector) CommonLocalCache.BasicInfoCache.getProperty("elector");
                             VoteRequest voteRequest = (VoteRequest) recieveData.getData();
                             CompletableFuture<VoteResponse>  completableFuture= elector4v.handleVote(voteRequest,false);
@@ -191,7 +189,6 @@ public class RemoteServer {
                                     }else{
                                         rpcResponse.setData(voteResponse);
                                     }
-                                    logger.debug("服务端处理完收到的选举消息时响应：{}", JSON.toJSONString(voteResponse));
                                     SendData<ResponseData> sendData = new SendData<ResponseData>(recieveData.getMsgType(), rpcResponse);
                                     ctx.writeAndFlush(sendData);
                                 }
