@@ -63,6 +63,7 @@ public abstract class IOTGateWacthDog extends SimpleChannelInboundHandler<Object
 			timer.newTimeout(this, 800, TimeUnit.MILLISECONDS);
 		}else{
 			//客户端不会自动重连
+			CommonLocalCache.Client2ServerThreadCache.remove(channelName);//删除channel绑定本地线程标识
 			CommonLocalCache.ClientChannelCache.removeChannel(channelName);
 		}
 		ctx.fireChannelInactive();

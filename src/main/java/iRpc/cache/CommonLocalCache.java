@@ -8,6 +8,8 @@ import iRpc.base.processor.IProcessor;
 import iRpc.dataBridge.ResponseData;
 import io.netty.channel.Channel;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -169,5 +171,27 @@ public class CommonLocalCache {
 		}
 
 
+	}
+
+	/**
+	 * 用于缓存选举过程中，server node节点的网络重连接线程
+	 */
+	public static class Client2ServerThreadCache{
+		private static Map<String,Thread> cache = new ConcurrentHashMap<>();
+
+		/**
+		 *
+		 * @param key  ip:port
+		 * @param thread
+		 */
+		public static void putThread(String key ,Thread thread){
+			cache.put(key,thread);
+		}
+		public static boolean isExist(String key){
+			return cache.containsKey(key);
+		}
+		public static void remove(String key){
+			cache.remove(key);
+		}
 	}
 }

@@ -103,6 +103,7 @@ public class RemoteClient {
 			}
 		}else{
 			//inner cluster node
+			CommonLocalCache.Client2ServerThreadCache.putThread(channelName,Thread.currentThread());
 			while(true){
 				Channel channel= CommonLocalCache.ChannelCache.getChannel(channelName);
 				if(channel != null && channel.isWritable()){
@@ -119,7 +120,7 @@ public class RemoteClient {
 					logger.error("cluster node {} connected failed ,try again later.....",String.format("%s:%s",ip,port));
 				}
 				try {
-					Thread.sleep(3000);
+					Thread.sleep(1000);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
