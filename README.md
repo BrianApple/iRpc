@@ -164,12 +164,13 @@ public class Test {
 #### raft选举
 基本集群基于raft选举算法实现节点自举，当前选举模式下，节点包含当前集群下所有节点信息
 
+![raft选举](https://images.gitee.com/uploads/images/2021/0410/101957_1cf5ac1f_1038477.png "raft选举.png")
 #### 集群扩容-选举过程依然基于raft
 扩容节点和原集群groupName必须一致，且iRpc不支持两个存在leader节点的集群合并扩容
 
 ##### AB + C(A) 或  AB + C(B) -> ABC
 AB基于raft算法自举选出leader，C节点只携带AB集群中的一部分节点信息参与扩容，最终达成选举一致。
-
+![AB + C(A) 或  AB + C(B) -> ABC](https://images.gitee.com/uploads/images/2021/0410/102039_9b06539c_1038477.png "扩容.png")
 
 ##### AB + C(AB) -> ABC
 AB基于raft算法自举选出leader，C节点携带原集群所有节点信息且groupName一致，参与集群扩容
