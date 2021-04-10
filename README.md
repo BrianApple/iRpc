@@ -96,11 +96,12 @@ iRpcClient:
 消息发送核心类为iRpc.base.messageDeal.MessageSender
 
 |     方法名称      | 发送模式 |返回结果 |
-    |------------- |----------|----------|
+|------------- |----------|----------|
 | 		synBaseMsgSend   | 同步	  |	 ResponseData对象，returncode != 200 发送失败 |
 | 		asynBaseMsgSend	   |	异步  | boolean,发布成功或失败，通过回调方式异步处理方法执行结果  |
 
 
+![客户端消息发送流程图](https://images.gitee.com/uploads/images/2021/0410/123030_25b15048_1038477.png "客户端消息发送流程图.png")
 
 
 ### 启动流程
