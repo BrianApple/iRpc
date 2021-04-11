@@ -176,6 +176,11 @@ AB基于raft算法自举选出leader，C节点只携带AB集群中的一部分�
 ##### AB + C(AB) -> ABC
 AB基于raft算法自举选出leader，C节点携带原集群所有节点信息且groupName一致，参与集群扩容
 ![AB + C(AB) -> ABC](https://images.gitee.com/uploads/images/2021/0410/103413_87b10f09_1038477.png "AB + C(AB) -> ABC.png")
+
+
+### 教程
+於之博客 :100: https://www.xianglong.work/tag/iRpc
+於之CSDN :100: https://blog.csdn.net/sinat_28771747/category_10967790.html
 ### 感谢
 Netty 项目及作者，项目地址： https://github.com/netty/netty
 dledger 项目及作者，项目地址： https://github.com/openmessaging/openmessaging-storage-dledger
